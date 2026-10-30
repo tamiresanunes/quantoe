@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
 import { useAuth } from '@/features/auth/auth-context';
 import { colors } from '@/theme/colors';
 import { globalStyles } from '@/theme/styles';
+import { textStyles } from '@/theme/typography';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -30,12 +31,19 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={[globalStyles.screen, styles.container]}>
-      <Text style={[globalStyles.title, styles.title]}>QuantoÉ</Text>
-      <Text style={globalStyles.body}>
-        Entrada simulada. Use ana@example.com ou bruna@example.com e qualquer
-        senha não vazia.
-      </Text>
+    <ScrollView
+      contentContainerStyle={[globalStyles.screenContent, styles.container]}
+      style={globalStyles.screen}
+    >
+      <View style={globalStyles.headingGroup}>
+        <Text style={[globalStyles.title, textStyles.display, styles.title]}>
+          QuantoÉ
+        </Text>
+        <Text style={globalStyles.body}>
+          Entrada simulada. Use ana@example.com ou bruna@example.com e qualquer
+          senha não vazia.
+        </Text>
+      </View>
       <TextInput
         accessibilityLabel="E-mail"
         autoCapitalize="none"
@@ -68,11 +76,11 @@ export default function LoginScreen() {
         title="Criar conta"
         variant="secondary"
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { justifyContent: 'center' },
-  title: { fontSize: 32, textAlign: 'center' },
+  title: { textAlign: 'center' },
 });

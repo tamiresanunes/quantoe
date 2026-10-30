@@ -1,11 +1,10 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
 import { useAuth } from '@/features/auth/auth-context';
 import { storeService } from '@/services';
-import { colors } from '@/theme/colors';
 import { globalStyles } from '@/theme/styles';
 import type { Store } from '@/types/models';
 
@@ -40,9 +39,14 @@ export default function StoresScreen() {
   }
 
   return (
-    <View style={globalStyles.screen}>
-      <Text style={globalStyles.title}>Minhas lojas</Text>
-      <Text style={globalStyles.body}>{user?.name}</Text>
+    <ScrollView
+      contentContainerStyle={globalStyles.screenContent}
+      style={globalStyles.screen}
+    >
+      <View style={globalStyles.headingGroup}>
+        <Text style={globalStyles.title}>Minhas lojas</Text>
+        <Text style={globalStyles.body}>{user?.name}</Text>
+      </View>
       {loading ? (
         <Text style={globalStyles.body}>Carregando lojas...</Text>
       ) : null}
@@ -52,17 +56,13 @@ export default function StoresScreen() {
       ) : null}
       {stores.map((store) => (
         <View key={store.id} style={globalStyles.card}>
-          <Text style={styles.storeName}>{store.name}</Text>
+          <Text style={globalStyles.subtitle}>{store.name}</Text>
           <Text style={globalStyles.body}>
             {store.city}, {store.state}
           </Text>
         </View>
       ))}
       <AppButton onPress={handleSignOut} title="Sair" variant="secondary" />
-    </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  storeName: { color: colors.text.primary, fontSize: 18, fontWeight: '600' },
-});

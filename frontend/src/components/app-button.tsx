@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors } from '@/theme/colors';
+import { componentSizes, radii, spacing } from '@/theme/spacing';
+import { textStyles } from '@/theme/typography';
 
 type AppButtonProps = {
   title: string;
@@ -45,14 +47,14 @@ export function AppButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
+    minHeight: componentSizes.button,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: radii.button,
     borderWidth: 1,
     borderColor: colors.action.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   primary: { backgroundColor: colors.action.primary },
   primaryPressed: {
@@ -62,7 +64,7 @@ const styles = StyleSheet.create({
   secondary: { backgroundColor: 'transparent' },
   secondaryPressed: { backgroundColor: colors.surface.selected },
   disabled: { opacity: 0.5 },
-  label: { fontSize: 16, fontWeight: '600' },
+  label: { ...textStyles.button, textAlign: 'center' },
   primaryLabel: { color: colors.text.inverse },
   secondaryLabel: { color: colors.action.secondary },
 });

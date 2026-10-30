@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
 import { useAuth } from '@/features/auth/auth-context';
@@ -33,7 +33,10 @@ export default function RegisterScreen() {
   }
 
   return (
-    <View style={[globalStyles.screen, styles.container]}>
+    <ScrollView
+      contentContainerStyle={[globalStyles.screenContent, styles.container]}
+      style={globalStyles.screen}
+    >
       <Text style={[globalStyles.title, styles.title]}>Criar conta</Text>
       <TextInput
         accessibilityLabel="Nome"
@@ -76,7 +79,7 @@ export default function RegisterScreen() {
         title="Voltar para login"
         variant="secondary"
       />
-    </View>
+    </ScrollView>
   );
 }
 
