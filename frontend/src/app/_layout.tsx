@@ -1,12 +1,20 @@
 import { Stack } from 'expo-router';
 
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
+import { colors } from '@/theme/colors';
 
 function AppStack() {
   const { user } = useAuth();
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        contentStyle: { backgroundColor: colors.background.primary },
+        headerStyle: { backgroundColor: colors.background.primary },
+        headerTintColor: colors.text.primary,
+        headerTitleStyle: { color: colors.text.primary },
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Protected guard={!user} redirectTo="/stores">
         <Stack.Screen name="auth/login" options={{ title: 'Entrar' }} />

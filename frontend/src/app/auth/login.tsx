@@ -1,8 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { AppButton } from '@/components/app-button';
 import { useAuth } from '@/features/auth/auth-context';
+import { colors } from '@/theme/colors';
+import { globalStyles } from '@/theme/styles';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -27,9 +30,9 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>QuantoÉ</Text>
-      <Text>
+    <View style={[globalStyles.screen, styles.container]}>
+      <Text style={[globalStyles.title, styles.title]}>QuantoÉ</Text>
+      <Text style={globalStyles.body}>
         Entrada simulada. Use ana@example.com ou bruna@example.com e qualquer
         senha não vazia.
       </Text>
@@ -39,34 +42,37 @@ export default function LoginScreen() {
         keyboardType="email-address"
         onChangeText={setEmail}
         placeholder="E-mail"
-        style={styles.input}
+        placeholderTextColor={colors.text.auxiliary}
+        selectionColor={colors.brand.terracotta}
+        style={globalStyles.input}
         value={email}
       />
       <TextInput
         accessibilityLabel="Senha"
         onChangeText={setPassword}
         placeholder="Senha"
+        placeholderTextColor={colors.text.auxiliary}
         secureTextEntry
-        style={styles.input}
+        selectionColor={colors.brand.terracotta}
+        style={globalStyles.input}
         value={password}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Button
+      {error ? <Text style={globalStyles.error}>{error}</Text> : null}
+      <AppButton
         disabled={loading}
         onPress={handleSignIn}
         title={loading ? 'Entrando...' : 'Entrar'}
       />
-      <Button
+      <AppButton
         onPress={() => router.push('/auth/register')}
         title="Criar conta"
+        variant="secondary"
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 16 },
-  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#888', borderRadius: 8, padding: 12 },
-  error: { color: '#B00020' },
+  container: { justifyContent: 'center' },
+  title: { fontSize: 32, textAlign: 'center' },
 });

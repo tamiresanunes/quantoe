@@ -42,5 +42,14 @@ O aplicativo começa na tela de login. Use `ana@example.com` ou `bruna@example.c
 - `src/mocks/fixtures/`: dados fictícios imutáveis de origem.
 - `src/types/`: modelos compartilhados.
 - `src/config/`: configuração pública do aplicativo.
+- `src/theme/colors.ts`: paleta, cores semânticas e status das peças para o tema claro.
+- `src/theme/styles.ts`: estilos reutilizáveis de telas, textos, campos e cards.
+- `src/components/`: componentes compartilhados, incluindo o botão primário e secundário.
 
 As telas importam serviços por `src/services/index.ts`, que hoje seleciona apenas mocks. `EXPO_PUBLIC_DATA_SOURCE=mock` é o único modo suportado; `EXPO_PUBLIC_API_URL` está reservado para a integração futura. Valores `EXPO_PUBLIC_*` ficam visíveis no aplicativo e não devem conter segredos.
+
+## Cores
+
+Use `colors` de `src/theme/colors.ts` para novas interfaces, evitando valores hexadecimais nas telas. `palette` guarda as cores da marca; `colors` nomeia o uso de cada cor, inclusive estados semânticos e status das peças. `globalStyles` reúne estilos básicos compartilhados. O aplicativo inicia em tema claro.
+
+O texto auxiliar foi reservado para superfícies `#FFFCF8`, onde atinge contraste AA para texto comum. Em campos de formulário, use `colors.border.strong`; a borda neutra é adequada para divisórias e cards decorativos, mas não delimita controles com contraste suficiente.

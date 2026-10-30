@@ -1,8 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { AppButton } from '@/components/app-button';
 import { useAuth } from '@/features/auth/auth-context';
+import { colors } from '@/theme/colors';
+import { globalStyles } from '@/theme/styles';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
@@ -30,13 +33,15 @@ export default function RegisterScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Criar conta</Text>
+    <View style={[globalStyles.screen, styles.container]}>
+      <Text style={[globalStyles.title, styles.title]}>Criar conta</Text>
       <TextInput
         accessibilityLabel="Nome"
         onChangeText={setName}
         placeholder="Nome"
-        style={styles.input}
+        placeholderTextColor={colors.text.auxiliary}
+        selectionColor={colors.brand.terracotta}
+        style={globalStyles.input}
         value={name}
       />
       <TextInput
@@ -45,34 +50,37 @@ export default function RegisterScreen() {
         keyboardType="email-address"
         onChangeText={setEmail}
         placeholder="E-mail"
-        style={styles.input}
+        placeholderTextColor={colors.text.auxiliary}
+        selectionColor={colors.brand.terracotta}
+        style={globalStyles.input}
         value={email}
       />
       <TextInput
         accessibilityLabel="Senha"
         onChangeText={setPassword}
         placeholder="Senha"
+        placeholderTextColor={colors.text.auxiliary}
         secureTextEntry
-        style={styles.input}
+        selectionColor={colors.brand.terracotta}
+        style={globalStyles.input}
         value={password}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Button
+      {error ? <Text style={globalStyles.error}>{error}</Text> : null}
+      <AppButton
         disabled={loading}
         onPress={handleSignUp}
         title={loading ? 'Criando...' : 'Criar conta'}
       />
-      <Button
+      <AppButton
         onPress={() => router.replace('/auth/login')}
         title="Voltar para login"
+        variant="secondary"
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 16 },
-  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#888', borderRadius: 8, padding: 12 },
-  error: { color: '#B00020' },
+  container: { justifyContent: 'center' },
+  title: { textAlign: 'center' },
 });
