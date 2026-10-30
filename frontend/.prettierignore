@@ -1,0 +1,5 @@
+.expo/
+node_modules/
+dist/
+package-lock.json
+assets/expo.icon/icon.json

@@ -2,7 +2,7 @@
 
 > Precificação assistida e gestão de estoque para brechós.
 
-**Status:** planejamento concluído; implementação ainda não iniciada.
+**Status:** planejamento concluído; estrutura inicial do aplicativo Expo em implementação na issue #01. Backend ainda não iniciado.
 
 O **QuantoÉ** é um aplicativo mobile para proprietários de brechós, vendedores independentes e pequenos negócios de moda circular. Permite organizar peças em uma ou mais lojas, receber sugestões padronizadas de preço e acompanhar indicadores e alertas de estoque.
 
@@ -70,7 +70,7 @@ quantoe/
 └── README.md
 ```
 
-**Atenção:** esta é uma **estrutura proposta**, não um retrato de arquivos já existentes. A criação do projeto Expo, a organização inicial das pastas e a configuração da navegação pertencem à **issue #01**. A criação efetiva do backend ocorrerá na milestone 06.
+**Atenção:** esta é a estrutura alvo. O projeto Expo e as rotas iniciais já existem em `frontend/`; os demais módulos serão criados conforme as issues. A criação efetiva do backend ocorrerá na milestone 06.
 
 ## Estratégia de desenvolvimento
 
@@ -94,13 +94,12 @@ As tabelas completas de pontuação, os exemplos e as regras dos mocks estão em
 
 ## Como executar
 
-O repositório ainda não contém um aplicativo inicializado. **Os comandos abaixo serão aplicáveis após a issue #01** e podem ser ajustados conforme os scripts efetivamente criados.
+O aplicativo inicial já pode ser executado com serviços simulados. Consulte também o [README do frontend](frontend/README.md) para o fluxo de demonstração e verificações.
 
 ```bash
-# Após inicializar o app Expo dentro de frontend/
 cd frontend
 npm install
-npx expo start
+npm run start
 ```
 
 O backend terá instruções próprias após sua inicialização na milestone 06. Não é necessário executar PostgreSQL ou Supabase para desenvolver as primeiras telas com mocks.
