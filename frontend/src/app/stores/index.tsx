@@ -1,19 +1,23 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
 import { AppCard } from '@/components/app-card';
+import { AppFeedback } from '@/components/app-feedback';
 import { AppHeader } from '@/components/app-header';
 import { AppList, AppListItem } from '@/components/app-list';
 import { AppSelect } from '@/components/app-select';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { EmptyState } from '@/components/empty-state';
+import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { storeService } from '@/services';
 import { globalStyles } from '@/theme/styles';
 import type { Store } from '@/types/models';
 
 export default function StoresScreen() {
+  const { registered } = useLocalSearchParams<{ registered?: string }>();
   const { user, signOut } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,10 +25,14 @@ export default function StoresScreen() {
   const [sortBy, setSortBy] = useState('name');
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     let active = true;
+    setLoading(true);
+    setError('');
+    setStores([]);
     storeService
       .listByOwner(user.id)
       .then((result) => {
@@ -39,7 +47,7 @@ export default function StoresScreen() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, reloadKey]);
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -64,14 +72,31 @@ export default function StoresScreen() {
       style={globalStyles.screen}
     >
       <AppHeader title="Minhas lojas" subtitle={user?.name} />
-      {loading ? (
-        <Text style={globalStyles.body}>Carregando lojas...</Text>
+      {registered === '1' ? (
+        <AppFeedback
+          variant="success"
+          title="Conta criada com sucesso"
+          message="Você já pode acessar suas lojas."
+          onDismiss={() => router.setParams({ registered: '' })}
+        />
       ) : null}
-      {error ? <Text style={globalStyles.error}>{error}</Text> : null}
+      {loading ? <LoadingState message="Carregando lojas..." /> : null}
+      {!loading && error ? (
+        <AppFeedback
+          variant="error"
+          title="Falha ao carregar lojas"
+          message={error}
+          actionLabel="Tentar novamente"
+          onAction={() => setReloadKey((key) => key + 1)}
+        />
+      ) : null}
       {!loading && !error && stores.length === 0 ? (
-        <Text style={globalStyles.body}>Você ainda não tem lojas.</Text>
+        <EmptyState
+          title="Nenhuma loja encontrada"
+          message="Você ainda não tem lojas cadastradas."
+        />
       ) : null}
-      {stores.length > 1 ? (
+      {!loading && !error && stores.length > 1 ? (
         <AppSelect
           label="Ordenar por"
           value={sortBy}
@@ -82,16 +107,18 @@ export default function StoresScreen() {
           ]}
         />
       ) : null}
-      <AppList>
-        {sortedStores.map((store) => (
-          <AppCard key={store.id}>
-            <AppListItem
-              title={store.name}
-              subtitle={`${store.city}, ${store.state}`}
-            />
-          </AppCard>
-        ))}
-      </AppList>
+      {!loading && !error && stores.length > 0 ? (
+        <AppList>
+          {sortedStores.map((store) => (
+            <AppCard key={store.id}>
+              <AppListItem
+                title={store.name}
+                subtitle={`${store.city}, ${store.state}`}
+              />
+            </AppCard>
+          ))}
+        </AppList>
+      ) : null}
       <AppButton
         onPress={() => setSignOutOpen(true)}
         title="Sair"

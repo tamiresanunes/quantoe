@@ -38,6 +38,7 @@ export function AppModal({ visible, title, children, onClose }: AppModalProps) {
               accessibilityRole="button"
               hitSlop={12}
               onPress={onClose}
+              style={styles.closeButton}
             >
               <Text style={styles.close}>×</Text>
             </Pressable>
@@ -53,10 +54,13 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: spacing.lg,
     backgroundColor: 'rgba(51, 42, 37, 0.55)',
   },
   panel: {
+    width: '100%',
+    maxWidth: 480,
     backgroundColor: colors.surface.primary,
     borderRadius: radii.modal,
     padding: spacing.lg,
@@ -70,5 +74,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   title: { ...textStyles.h3, color: colors.text.primary, flex: 1 },
+  closeButton: {
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   close: { ...textStyles.h3, color: colors.text.secondary },
 });

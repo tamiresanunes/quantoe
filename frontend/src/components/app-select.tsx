@@ -35,7 +35,7 @@ export function AppSelect({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityHint="Abre a lista de opções"
+        accessibilityHint={error ? `${error}. Abre a lista de opções` : 'Abre a lista de opções'}
         accessibilityState={{ disabled, expanded: open }}
         disabled={disabled}
         onPress={() => setOpen(true)}

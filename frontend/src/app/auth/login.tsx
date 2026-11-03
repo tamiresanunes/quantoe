@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
+import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { globalStyles } from '@/theme/styles';
@@ -59,11 +60,18 @@ export default function LoginScreen() {
         secureTextEntry
         value={password}
       />
-      {error ? <Text style={globalStyles.error}>{error}</Text> : null}
+      {error ? (
+        <AppFeedback
+          variant="error"
+          title="Não foi possível entrar"
+          message={error}
+          onDismiss={() => setError('')}
+        />
+      ) : null}
       <AppButton
         loading={loading}
         onPress={handleSignIn}
-        title={loading ? 'Entrando...' : 'Entrar'}
+        title="Entrar"
       />
       <AppButton
         onPress={() => router.push('/auth/register')}

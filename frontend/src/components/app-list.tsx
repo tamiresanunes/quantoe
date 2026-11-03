@@ -1,6 +1,7 @@
-import { ReactNode } from 'react';
+import { Children, ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { EmptyState } from '@/components/empty-state';
 import { colors } from '@/theme/colors';
 import { componentSizes, spacing } from '@/theme/spacing';
 import { textStyles } from '@/theme/typography';
@@ -19,7 +20,9 @@ export function AppList({
 }: AppListProps) {
   return (
     <View style={styles.list}>
-      {children || <Text style={styles.empty}>{emptyMessage}</Text>}
+      {Children.count(children) > 0 ? children : (
+        <EmptyState title={emptyMessage} />
+      )}
     </View>
   );
 }
@@ -67,6 +70,5 @@ const styles = StyleSheet.create({
   copy: { flex: 1, gap: spacing.xxs },
   title: { ...textStyles.body, color: colors.text.primary },
   subtitle: { ...textStyles.bodySecondary, color: colors.text.secondary },
-  empty: { ...textStyles.body, color: colors.text.secondary },
   pressed: { opacity: 0.7 },
 });

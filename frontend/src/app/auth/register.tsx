@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
+import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { globalStyles } from '@/theme/styles';
@@ -20,7 +21,7 @@ export default function RegisterScreen() {
     setError('');
     try {
       await signUp({ name, email, password });
-      router.replace('/stores');
+      router.replace({ pathname: '/stores', params: { registered: '1' } });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -59,11 +60,18 @@ export default function RegisterScreen() {
         secureTextEntry
         value={password}
       />
-      {error ? <Text style={globalStyles.error}>{error}</Text> : null}
+      {error ? (
+        <AppFeedback
+          variant="error"
+          title="Não foi possível criar a conta"
+          message={error}
+          onDismiss={() => setError('')}
+        />
+      ) : null}
       <AppButton
         loading={loading}
         onPress={handleSignUp}
-        title={loading ? 'Criando...' : 'Criar conta'}
+        title="Criar conta"
       />
       <AppButton
         onPress={() => router.replace('/auth/login')}

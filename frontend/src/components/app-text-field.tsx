@@ -33,6 +33,7 @@ export function AppTextField({
       <TextInput
         {...inputProps}
         accessibilityLabel={label}
+        accessibilityHint={error || helperText}
         accessibilityState={{ disabled: !editable }}
         editable={editable}
         onBlur={(event) => {

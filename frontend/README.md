@@ -35,6 +35,8 @@ O aplicativo começa na tela de login. Use `ana@example.com` ou `bruna@example.c
 
 ## Organização
 
+As propriedades e exemplos dos componentes reutilizáveis estão em [docs/COMPONENTS.md](docs/COMPONENTS.md).
+
 - `src/app/`: rotas e layouts do Expo Router.
 - `src/features/`: estado e lógica de interface por domínio.
 - `src/services/contracts/`: interfaces usadas pelas telas.

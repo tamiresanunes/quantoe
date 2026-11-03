@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
 import { AppModal } from '@/components/app-modal';
@@ -29,23 +29,25 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { width, fontScale } = useWindowDimensions();
+  const stackActions = width < 390 || fontScale > 1.2;
   return (
     <AppModal visible={visible} title={title} onClose={onCancel}>
       <Text style={styles.message}>{message}</Text>
-      <View style={styles.actions}>
+      <View style={[styles.actions, stackActions && styles.actionsStacked]}>
         <AppButton
           title={cancelLabel}
           variant="secondary"
           onPress={onCancel}
           disabled={loading}
-          style={styles.action}
+          style={stackActions ? styles.stackedAction : styles.action}
         />
         <AppButton
           title={confirmLabel}
           variant={destructive ? 'danger' : 'primary'}
           onPress={onConfirm}
           loading={loading}
-          style={styles.action}
+          style={stackActions ? styles.stackedAction : styles.action}
         />
       </View>
     </AppModal>
@@ -55,5 +57,7 @@ export function ConfirmDialog({
 const styles = StyleSheet.create({
   message: { ...textStyles.body, color: colors.text.secondary },
   actions: { flexDirection: 'row', gap: spacing.sm },
+  actionsStacked: { flexDirection: 'column-reverse' },
   action: { flex: 1 },
+  stackedAction: { width: '100%' },
 });

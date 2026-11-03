@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  small: { minHeight: componentSizes.buttonSmall, paddingVertical: spacing.xs },
+  small: { minHeight: componentSizes.touchTarget, paddingVertical: spacing.xs },
   primary: { backgroundColor: colors.action.primary },
   primaryPressed: {
     backgroundColor: colors.action.primaryPressed,
