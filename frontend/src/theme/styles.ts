@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native';
 
-import { colors } from '/colors';
-import { componentSizes, layout, radii, spacing } from '/spacing';
-import { textStyles } from '/typography';
+import { colors } from './colors';
+import { componentSizes, layout, radii, spacing } from './spacing';
+import { textStyles } from './typography';
 
 /** Estilos básicos compartilhados pelas telas. */
 export const globalStyles = StyleSheet.create({
