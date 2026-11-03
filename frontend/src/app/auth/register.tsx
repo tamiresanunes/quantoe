@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
+import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
-import { colors } from '@/theme/colors';
 import { globalStyles } from '@/theme/styles';
 
 export default function RegisterScreen() {
@@ -38,39 +38,30 @@ export default function RegisterScreen() {
       style={globalStyles.screen}
     >
       <Text style={[globalStyles.title, styles.title]}>Criar conta</Text>
-      <TextInput
-        accessibilityLabel="Nome"
+      <AppTextField
+        label="Nome"
         onChangeText={setName}
         placeholder="Nome"
-        placeholderTextColor={colors.text.auxiliary}
-        selectionColor={colors.brand.terracotta}
-        style={globalStyles.input}
         value={name}
       />
-      <TextInput
-        accessibilityLabel="E-mail"
+      <AppTextField
+        label="E-mail"
         autoCapitalize="none"
         keyboardType="email-address"
         onChangeText={setEmail}
         placeholder="E-mail"
-        placeholderTextColor={colors.text.auxiliary}
-        selectionColor={colors.brand.terracotta}
-        style={globalStyles.input}
         value={email}
       />
-      <TextInput
-        accessibilityLabel="Senha"
+      <AppTextField
+        label="Senha"
         onChangeText={setPassword}
         placeholder="Senha"
-        placeholderTextColor={colors.text.auxiliary}
         secureTextEntry
-        selectionColor={colors.brand.terracotta}
-        style={globalStyles.input}
         value={password}
       />
       {error ? <Text style={globalStyles.error}>{error}</Text> : null}
       <AppButton
-        disabled={loading}
+        loading={loading}
         onPress={handleSignUp}
         title={loading ? 'Criando...' : 'Criar conta'}
       />

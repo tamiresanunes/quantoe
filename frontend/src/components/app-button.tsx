@@ -1,14 +1,23 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  ViewStyle,
+} from 'react-native';
 
 import { colors } from '@/theme/colors';
 import { componentSizes, radii, spacing } from '@/theme/spacing';
 import { textStyles } from '@/theme/typography';
 
-type AppButtonProps = {
+export type AppButtonProps = {
   title: string;
   onPress: () => void | Promise<void>;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   disabled?: boolean;
+  loading?: boolean;
+  size?: 'default' | 'small';
+  style?: ViewStyle;
 };
 
 export function AppButton({
@@ -16,31 +25,45 @@ export function AppButton({
   onPress,
   variant = 'primary',
   disabled = false,
+  loading = false,
+  size = 'default',
+  style,
 }: AppButtonProps) {
-  const secondary = variant === 'secondary';
+  const inactive = disabled || loading;
+  const foreground =
+    variant === 'primary'
+      ? colors.text.inverse
+      : variant === 'danger'
+        ? colors.semantic.error.foreground
+        : colors.action.secondary;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: inactive, busy: loading }}
+      disabled={inactive}
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        secondary ? styles.secondary : styles.primary,
+        size === 'small' && styles.small,
+        variant === 'primary' && styles.primary,
+        variant === 'secondary' && styles.secondary,
+        variant === 'ghost' && styles.ghost,
+        variant === 'danger' && styles.danger,
         pressed &&
-          (secondary ? styles.secondaryPressed : styles.primaryPressed),
-        disabled && styles.disabled,
+          (variant === 'primary'
+            ? styles.primaryPressed
+            : styles.outlinePressed),
+        inactive && styles.disabled,
+        style,
       ]}
     >
-      <Text
-        style={[
-          styles.label,
-          secondary ? styles.secondaryLabel : styles.primaryLabel,
-        ]}
-      >
-        {title}
-      </Text>
+      {loading ? (
+        <ActivityIndicator color={foreground} />
+      ) : (
+        <Text style={[styles.label, { color: foreground }]}>{title}</Text>
+      )}
     </Pressable>
   );
 }
@@ -56,15 +79,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
+  small: { minHeight: componentSizes.buttonSmall, paddingVertical: spacing.xs },
   primary: { backgroundColor: colors.action.primary },
   primaryPressed: {
     backgroundColor: colors.action.primaryPressed,
     borderColor: colors.action.primaryPressed,
   },
   secondary: { backgroundColor: 'transparent' },
-  secondaryPressed: { backgroundColor: colors.surface.selected },
+  ghost: { backgroundColor: 'transparent', borderColor: 'transparent' },
+  danger: {
+    backgroundColor: 'transparent',
+    borderColor: colors.semantic.error.foreground,
+  },
+  outlinePressed: { backgroundColor: colors.surface.selected },
   disabled: { opacity: 0.5 },
   label: { ...textStyles.button, textAlign: 'center' },
-  primaryLabel: { color: colors.text.inverse },
-  secondaryLabel: { color: colors.action.secondary },
 });
