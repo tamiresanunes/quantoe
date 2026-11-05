@@ -30,9 +30,6 @@ export default function StoresScreen() {
   useEffect(() => {
     if (!user) return;
     let active = true;
-    setLoading(true);
-    setError('');
-    setStores([]);
     storeService
       .listByOwner(user.id)
       .then((result) => {
@@ -48,6 +45,13 @@ export default function StoresScreen() {
       active = false;
     };
   }, [user, reloadKey]);
+
+  function retryLoadingStores() {
+    setLoading(true);
+    setError('');
+    setStores([]);
+    setReloadKey((key) => key + 1);
+  }
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -87,7 +91,7 @@ export default function StoresScreen() {
           title="Falha ao carregar lojas"
           message={error}
           actionLabel="Tentar novamente"
-          onAction={() => setReloadKey((key) => key + 1)}
+          onAction={retryLoadingStores}
         />
       ) : null}
       {!loading && !error && stores.length === 0 ? (

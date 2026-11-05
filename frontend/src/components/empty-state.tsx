@@ -38,6 +38,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.md,
   },
-  title: { ...textStyles.subtitle, color: colors.text.primary, textAlign: 'center' },
-  message: { ...textStyles.bodySecondary, color: colors.text.secondary, textAlign: 'center' },
+  title: {
+    ...textStyles.subtitle,
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  message: {
+    ...textStyles.bodySecondary,
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
 });

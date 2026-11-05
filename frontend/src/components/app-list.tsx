@@ -20,7 +20,9 @@ export function AppList({
 }: AppListProps) {
   return (
     <View style={styles.list}>
-      {Children.count(children) > 0 ? children : (
+      {Children.count(children) > 0 ? (
+        children
+      ) : (
         <EmptyState title={emptyMessage} />
       )}
     </View>

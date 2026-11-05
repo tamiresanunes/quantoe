@@ -68,11 +68,7 @@ export default function LoginScreen() {
           onDismiss={() => setError('')}
         />
       ) : null}
-      <AppButton
-        loading={loading}
-        onPress={handleSignIn}
-        title="Entrar"
-      />
+      <AppButton loading={loading} onPress={handleSignIn} title="Entrar" />
       <AppButton
         onPress={() => router.push('/auth/register')}
         title="Criar conta"

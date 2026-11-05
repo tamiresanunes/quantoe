@@ -31,7 +31,10 @@ export function AppFeedback({
       ]}
     >
       <View style={styles.content}>
-        <Text accessibilityRole="alert" style={[styles.title, { color: tone.foreground }]}>
+        <Text
+          accessibilityRole="alert"
+          style={[styles.title, { color: tone.foreground }]}
+        >
           {title}
         </Text>
         {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -54,7 +57,9 @@ export function AppFeedback({
           onPress={onDismiss}
           style={styles.dismiss}
         >
-          <Text style={[styles.dismissLabel, { color: tone.foreground }]}>×</Text>
+          <Text style={[styles.dismissLabel, { color: tone.foreground }]}>
+            ×
+          </Text>
         </Pressable>
       ) : null}
     </View>

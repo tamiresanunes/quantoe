@@ -68,11 +68,7 @@ export default function RegisterScreen() {
           onDismiss={() => setError('')}
         />
       ) : null}
-      <AppButton
-        loading={loading}
-        onPress={handleSignUp}
-        title="Criar conta"
-      />
+      <AppButton loading={loading} onPress={handleSignUp} title="Criar conta" />
       <AppButton
         onPress={() => router.replace('/auth/login')}
         title="Voltar para login"
