@@ -3,6 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -58,10 +59,17 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brand}>
-            <View style={styles.logo} accessibilityLabel="Quanto É?">
-              <Text style={styles.logoLetter}>Q</Text>
+            <View style={styles.logo}>
+              <Image
+                accessibilityLabel="Ícone do Quanto É?"
+                source={require('../../../assets/images/app-icon.png')}
+                resizeMode="contain"
+                style={styles.logoImage}
+              />
             </View>
-            <Text style={styles.title}>Quanto É?</Text>
+            <Text style={styles.title}>
+              Quanto <Text style={styles.titleAccent}>É</Text>
+            </Text>
             <Text style={styles.subtitle}>
               Preço justo para cada peça com história.
             </Text>
@@ -88,8 +96,9 @@ export default function LoginScreen() {
               style={styles.fieldInput}
               autoComplete="current-password"
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder="Digite sua senha"
               secureTextEntry={!passwordVisible}
+              underlineColorAndroid="transparent"
               value={password}
               rightAccessory={
                 <Pressable
@@ -102,17 +111,20 @@ export default function LoginScreen() {
                   onPress={() => setPasswordVisible((visible) => !visible)}
                   style={styles.visibilityButton}
                 >
-                  <SymbolView
-                    name={{
-                      ios: passwordVisible ? 'eye.slash' : 'eye',
-                      android: passwordVisible
-                        ? 'visibility_off'
-                        : 'visibility',
-                      web: passwordVisible ? 'visibility_off' : 'visibility',
-                    }}
-                    size={20}
-                    tintColor={colors.text.secondary}
-                  />
+                  <View pointerEvents="none">
+                    <SymbolView
+                      key={passwordVisible ? 'visible' : 'hidden'}
+                      name={{
+                        ios: passwordVisible ? 'eye.slash' : 'eye',
+                        android: passwordVisible
+                          ? 'visibility_off'
+                          : 'visibility',
+                        web: passwordVisible ? 'visibility_off' : 'visibility',
+                      }}
+                      size={20}
+                      tintColor={colors.text.secondary}
+                    />
+                  </View>
                 </Pressable>
               }
             />
@@ -171,20 +183,13 @@ const styles = StyleSheet.create({
   },
   brand: { alignItems: 'center' },
   logo: {
-    width: 48,
-    height: 48,
+    width: 60,
+    height: 60,
     borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: terracotta,
-    marginBottom: 10,
+    overflow: 'hidden',
+    marginBottom: 8,
   },
-  logoLetter: {
-    fontFamily: fontFamilies.display,
-    fontSize: 25,
-    lineHeight: 32,
-    color: '#FFFFFF',
-  },
+  logoImage: { width: 60, height: 60 },
   title: {
     fontFamily: fontFamilies.display,
     fontSize: 30,
@@ -192,6 +197,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     textAlign: 'center',
   },
+  titleAccent: { color: terracotta },
   subtitle: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 12,
@@ -216,26 +222,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDFAF4',
   },
   fieldInput: {
-    minHeight: 42,
+    minHeight: 40,
     fontFamily: fontFamilies.sansRegular,
     fontSize: 12,
   },
   visibilityButton: {
-    width: 44,
+    width: 48,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
   forgotButton: {
     alignSelf: 'flex-end',
-    minHeight: 30,
+    minHeight: 40,
     justifyContent: 'center',
     marginTop: -6,
   },
   forgotText: {
     fontFamily: fontFamilies.sansRegular,
-    color: terracotta,
-    fontSize: 11,
+    color: '#904329',
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
   signInButton: {
     minHeight: 44,

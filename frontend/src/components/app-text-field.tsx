@@ -43,10 +43,10 @@ export function AppTextField({
       <View
         style={[
           styles.field,
+          fieldStyle,
           focused && styles.focused,
           !!error && styles.invalid,
           !editable && styles.disabled,
-          fieldStyle,
         ]}
       >
         <TextInput
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.strong,
     borderRadius: radii.field,
+    overflow: 'hidden',
     minHeight: componentSizes.field,
     paddingLeft: spacing.sm,
     paddingRight: spacing.xs,
@@ -98,9 +99,11 @@ const styles = StyleSheet.create({
     ...textStyles.body,
     flex: 1,
     minWidth: 0,
-    minHeight: componentSizes.field - 2,
+    minHeight: componentSizes.field - 4,
     paddingVertical: spacing.xs,
     color: colors.text.primary,
+    outlineColor: 'transparent',
+    outlineWidth: 0,
   },
   focused: { borderColor: colors.border.selected, borderWidth: 2 },
   invalid: { borderColor: colors.semantic.error.foreground },
