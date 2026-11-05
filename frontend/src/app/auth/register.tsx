@@ -2,11 +2,11 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 
-import { AppButton } from '@/components/app-button';
-import { AppFeedback } from '@/components/app-feedback';
-import { AppTextField } from '@/components/app-text-field';
-import { useAuth } from '@/features/auth/auth-context';
-import { globalStyles } from '@/theme/styles';
+import { AppButton } from '../../components/app-button';
+import { AppFeedback } from '../../components/app-feedback';
+import { AppTextField } from '../../components/app-text-field';
+import { useAuth } from '../../features/auth/auth-context';
+import { globalStyles } from '../../theme/styles';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
