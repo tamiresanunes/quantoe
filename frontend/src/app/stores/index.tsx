@@ -1,16 +1,31 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import { ScrollView } from 'react-native';
 
+import { AppButton } from '@/components/app-button';
+import { AppCard } from '@/components/app-card';
+import { AppFeedback } from '@/components/app-feedback';
+import { AppHeader } from '@/components/app-header';
+import { AppList, AppListItem } from '@/components/app-list';
+import { AppSelect } from '@/components/app-select';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { EmptyState } from '@/components/empty-state';
+import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { storeService } from '@/services';
+import { globalStyles } from '@/theme/styles';
 import type { Store } from '@/types/models';
 
 export default function StoresScreen() {
+  const { registered } = useLocalSearchParams<{ registered?: string }>();
   const { user, signOut } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [signOutOpen, setSignOutOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -29,39 +44,100 @@ export default function StoresScreen() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, reloadKey]);
 
-  async function handleSignOut() {
-    await signOut();
-    router.replace('/auth/login');
+  function retryLoadingStores() {
+    setLoading(true);
+    setError('');
+    setStores([]);
+    setReloadKey((key) => key + 1);
   }
 
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await signOut();
+      setSignOutOpen(false);
+      router.replace('/auth/login');
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  const sortedStores = [...stores].sort((a, b) =>
+    sortBy === 'city'
+      ? `${a.city}, ${a.state}`.localeCompare(`${b.city}, ${b.state}`, 'pt-BR')
+      : a.name.localeCompare(b.name, 'pt-BR'),
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Minhas lojas</Text>
-      <Text>{user?.name}</Text>
-      {loading ? <Text>Carregando lojas...</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!loading && !error && stores.length === 0 ? (
-        <Text>Você ainda não tem lojas.</Text>
+    <ScrollView
+      contentContainerStyle={globalStyles.screenContent}
+      style={globalStyles.screen}
+    >
+      <AppHeader title="Minhas lojas" subtitle={user?.name} />
+      {registered === '1' ? (
+        <AppFeedback
+          variant="success"
+          title="Conta criada com sucesso"
+          message="Você já pode acessar suas lojas."
+          onDismiss={() => router.setParams({ registered: '' })}
+        />
       ) : null}
-      {stores.map((store) => (
-        <View key={store.id} style={styles.store}>
-          <Text style={styles.storeName}>{store.name}</Text>
-          <Text>
-            {store.city}, {store.state}
-          </Text>
-        </View>
-      ))}
-      <Button onPress={handleSignOut} title="Sair" />
-    </View>
+      {loading ? <LoadingState message="Carregando lojas..." /> : null}
+      {!loading && error ? (
+        <AppFeedback
+          variant="error"
+          title="Falha ao carregar lojas"
+          message={error}
+          actionLabel="Tentar novamente"
+          onAction={retryLoadingStores}
+        />
+      ) : null}
+      {!loading && !error && stores.length === 0 ? (
+        <EmptyState
+          title="Nenhuma loja encontrada"
+          message="Você ainda não tem lojas cadastradas."
+        />
+      ) : null}
+      {!loading && !error && stores.length > 1 ? (
+        <AppSelect
+          label="Ordenar por"
+          value={sortBy}
+          onChange={setSortBy}
+          options={[
+            { label: 'Nome', value: 'name' },
+            { label: 'Cidade', value: 'city' },
+          ]}
+        />
+      ) : null}
+      {!loading && !error && stores.length > 0 ? (
+        <AppList>
+          {sortedStores.map((store) => (
+            <AppCard key={store.id}>
+              <AppListItem
+                title={store.name}
+                subtitle={`${store.city}, ${store.state}`}
+              />
+            </AppCard>
+          ))}
+        </AppList>
+      ) : null}
+      <AppButton
+        onPress={() => setSignOutOpen(true)}
+        title="Sair"
+        variant="secondary"
+      />
+      <ConfirmDialog
+        visible={signOutOpen}
+        title="Sair da conta?"
+        message="Você precisará entrar novamente para acessar suas lojas."
+        confirmLabel="Sair"
+        destructive
+        loading={signingOut}
+        onCancel={() => setSignOutOpen(false)}
+        onConfirm={handleSignOut}
+      />
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 16 },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  store: { borderWidth: 1, borderColor: '#CCC', borderRadius: 8, padding: 16 },
-  storeName: { fontSize: 18, fontWeight: '600' },
-  error: { color: '#B00020' },
-});

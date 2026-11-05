@@ -1,8 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
+import { AppButton } from '@/components/app-button';
+import { AppFeedback } from '@/components/app-feedback';
+import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
+import { globalStyles } from '@/theme/styles';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
@@ -17,7 +21,7 @@ export default function RegisterScreen() {
     setError('');
     try {
       await signUp({ name, email, password });
-      router.replace('/stores');
+      router.replace({ pathname: '/stores', params: { registered: '1' } });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -30,49 +34,51 @@ export default function RegisterScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Criar conta</Text>
-      <TextInput
-        accessibilityLabel="Nome"
+    <ScrollView
+      contentContainerStyle={[globalStyles.screenContent, styles.container]}
+      style={globalStyles.screen}
+    >
+      <Text style={[globalStyles.title, styles.title]}>Criar conta</Text>
+      <AppTextField
+        label="Nome"
         onChangeText={setName}
         placeholder="Nome"
-        style={styles.input}
         value={name}
       />
-      <TextInput
-        accessibilityLabel="E-mail"
+      <AppTextField
+        label="E-mail"
         autoCapitalize="none"
         keyboardType="email-address"
         onChangeText={setEmail}
         placeholder="E-mail"
-        style={styles.input}
         value={email}
       />
-      <TextInput
-        accessibilityLabel="Senha"
+      <AppTextField
+        label="Senha"
         onChangeText={setPassword}
         placeholder="Senha"
         secureTextEntry
-        style={styles.input}
         value={password}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Button
-        disabled={loading}
-        onPress={handleSignUp}
-        title={loading ? 'Criando...' : 'Criar conta'}
-      />
-      <Button
+      {error ? (
+        <AppFeedback
+          variant="error"
+          title="Não foi possível criar a conta"
+          message={error}
+          onDismiss={() => setError('')}
+        />
+      ) : null}
+      <AppButton loading={loading} onPress={handleSignUp} title="Criar conta" />
+      <AppButton
         onPress={() => router.replace('/auth/login')}
         title="Voltar para login"
+        variant="secondary"
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 16 },
-  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#888', borderRadius: 8, padding: 12 },
-  error: { color: '#B00020' },
+  container: { justifyContent: 'center' },
+  title: { textAlign: 'center' },
 });
