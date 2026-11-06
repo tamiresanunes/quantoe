@@ -32,6 +32,10 @@ function AppStack() {
       <Stack.Protected guard={!user} redirectTo="/stores">
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="auth/forgot-password"
+          options={{ headerShown: false }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!!user} redirectTo="/auth/login">
         <Stack.Screen name="stores/index" options={{ title: 'Minhas lojas' }} />

@@ -52,6 +52,10 @@ export const mockAuthService: AuthService = {
   async signOut() {
     currentUser = null;
   },
+  async requestPasswordReset() {
+    await simulateRequest();
+    // Demonstração: nenhuma mensagem é enviada e a existência da conta não é revelada.
+  },
   async getCurrentUser() {
     return currentUser;
   },
