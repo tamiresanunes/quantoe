@@ -39,6 +39,7 @@ function AppStack() {
       </Stack.Protected>
       <Stack.Protected guard={!!user} redirectTo="/auth/login">
         <Stack.Screen name="stores/index" options={{ title: 'Minhas lojas' }} />
+        <Stack.Screen name="stores/create" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );

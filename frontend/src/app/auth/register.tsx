@@ -101,7 +101,7 @@ export default function RegisterScreen() {
         password,
         photoUrl,
       });
-      router.replace({ pathname: '/stores', params: { registered: '1' } });
+      router.replace('/stores/create');
     } catch (cause) {
       setError(
         cause instanceof Error

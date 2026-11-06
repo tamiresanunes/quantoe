@@ -17,8 +17,8 @@ import { globalStyles } from '@/theme/styles';
 import type { Store } from '@/types/models';
 
 export default function StoresScreen() {
-  const { registered, loggedIn } = useLocalSearchParams<{
-    registered?: string;
+  const { storeCreated, loggedIn } = useLocalSearchParams<{
+    storeCreated?: string;
     loggedIn?: string;
   }>();
   const { user, signOut } = useAuth();
@@ -36,7 +36,12 @@ export default function StoresScreen() {
     storeService
       .listByOwner(user.id)
       .then((result) => {
-        if (active) setStores(result);
+        if (!active) return;
+        if (result.length === 0) {
+          router.replace('/stores/create');
+          return;
+        }
+        setStores(result);
       })
       .catch(() => {
         if (active) setError('Não foi possível carregar as lojas.');
@@ -79,17 +84,17 @@ export default function StoresScreen() {
       style={globalStyles.screen}
     >
       <AppHeader title="Minhas lojas" subtitle={user?.name} />
-      {registered === '1' || loggedIn === '1' ? (
+      {storeCreated === '1' || loggedIn === '1' ? (
         <AppFeedback
           compact
           variant="success"
           title={
-            registered === '1'
-              ? 'Conta criada com sucesso'
+            storeCreated === '1'
+              ? 'Loja cadastrada com sucesso'
               : 'Acesso realizado com sucesso'
           }
           message="Você já pode acessar suas lojas."
-          onDismiss={() => router.setParams({ registered: '', loggedIn: '' })}
+          onDismiss={() => router.setParams({ storeCreated: '', loggedIn: '' })}
         />
       ) : null}
       {loading ? <LoadingState message="Carregando lojas..." /> : null}
