@@ -18,6 +18,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
+import { EditStoreModal } from '@/features/stores/edit-store-modal';
 import { storeService } from '@/services';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
@@ -31,9 +32,8 @@ type Notice = {
 };
 
 export default function StoresScreen() {
-  const { storeCreated, storeUpdated, loggedIn } = useLocalSearchParams<{
+  const { storeCreated, loggedIn } = useLocalSearchParams<{
     storeCreated?: string;
-    storeUpdated?: string;
     loggedIn?: string;
   }>();
   const { height } = useWindowDimensions();
@@ -45,6 +45,7 @@ export default function StoresScreen() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
+  const [editTarget, setEditTarget] = useState<Store | null>(null);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -62,21 +63,16 @@ export default function StoresScreen() {
           return;
         }
         setStores(result);
-        if (storeCreated === '1' || storeUpdated === '1' || loggedIn === '1') {
+        if (storeCreated === '1' || loggedIn === '1') {
           setNotice({
             variant: 'success',
             title:
-              storeCreated === '1'
-                ? 'Loja cadastrada'
-                : storeUpdated === '1'
-                  ? 'Loja atualizada'
-                  : 'Acesso realizado',
+              storeCreated === '1' ? 'Loja cadastrada' : 'Acesso realizado',
             message: 'Suas lojas estão prontas para usar.',
             id: Date.now(),
           });
           router.setParams({
             storeCreated: '',
-            storeUpdated: '',
             loggedIn: '',
           });
         }
@@ -93,7 +89,20 @@ export default function StoresScreen() {
     return () => {
       mounted = false;
     };
-  }, [user, reloadKey, storeCreated, storeUpdated, loggedIn]);
+  }, [user, reloadKey, storeCreated, loggedIn]);
+
+  function handleEditedStore(updated: Store) {
+    setStores((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item)),
+    );
+    setEditTarget(null);
+    setNotice({
+      variant: 'success',
+      title: 'Loja atualizada',
+      message: 'As alterações foram salvas.',
+      id: Date.now(),
+    });
+  }
 
   function showError(cause: unknown) {
     setNotice({
@@ -308,12 +317,7 @@ export default function StoresScreen() {
                 <Pressable
                   accessibilityLabel={`Editar ${store.name}`}
                   accessibilityRole="button"
-                  onPress={() =>
-                    router.push({
-                      pathname: '/stores/edit',
-                      params: { id: store.id },
-                    })
-                  }
+                  onPress={() => setEditTarget(store)}
                   style={styles.iconButton}
                 >
                   <View pointerEvents="none">
@@ -347,6 +351,12 @@ export default function StoresScreen() {
           ) : null}
         </View>
       </ScrollView>
+      <EditStoreModal
+        store={editTarget}
+        ownerId={user?.id ?? ''}
+        onClose={() => setEditTarget(null)}
+        onSaved={handleEditedStore}
+      />
       <ConfirmDialog
         visible={!!deleteTarget}
         title="Excluir loja?"

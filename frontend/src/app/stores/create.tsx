@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -26,8 +26,7 @@ import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 
 export default function CreateStoreScreen() {
-  const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
-  const isEdit = !!id;
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const { height } = useWindowDimensions();
   const heroHeight = Math.round(height * 0.3);
   const cardTop = height < 650 ? 90 : 104;
@@ -39,33 +38,6 @@ export default function CreateStoreScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!isEdit || !user) return;
-    let mounted = true;
-    storeService
-      .listByOwner(user.id)
-      .then((result) => {
-        if (!mounted) return;
-        const store = result.find((item) => item.id === id);
-        if (!store) throw new Error('Loja não encontrada.');
-        setName(store.name);
-        setState(store.state);
-        setCity(store.city);
-        setLogoUrl(store.logoUrl);
-      })
-      .catch((cause) => {
-        if (mounted)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : 'Não foi possível carregar a loja.',
-          );
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [id, isEdit, user]);
 
   async function handlePickLogo() {
     try {
@@ -91,24 +63,14 @@ export default function CreateStoreScreen() {
 
     setLoading(true);
     try {
-      if (isEdit && id) {
-        await storeService.update(user.id, id, {
-          name: name.trim(),
-          state,
-          city,
-          logoUrl,
-        });
-        router.replace({ pathname: '/stores', params: { storeUpdated: '1' } });
-      } else {
-        await storeService.create({
-          ownerId: user.id,
-          name: name.trim(),
-          state,
-          city,
-          logoUrl,
-        });
-        router.replace({ pathname: '/stores', params: { storeCreated: '1' } });
-      }
+      await storeService.create({
+        ownerId: user.id,
+        name: name.trim(),
+        state,
+        city,
+        logoUrl,
+      });
+      router.replace({ pathname: '/stores', params: { storeCreated: '1' } });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -121,7 +83,7 @@ export default function CreateStoreScreen() {
   }
 
   async function handleCancel() {
-    if (isEdit || from === 'stores') {
+    if (from === 'stores') {
       router.replace('/stores');
       return;
     }
@@ -141,18 +103,12 @@ export default function CreateStoreScreen() {
         >
           <View style={[styles.hero, { minHeight: heroHeight }]}>
             <Text style={styles.title}>
-              {isEdit
-                ? 'Editar loja'
-                : from === 'stores'
-                  ? 'Nova loja'
-                  : 'Sua loja'}
+              {from === 'stores' ? 'Nova loja' : 'Sua loja'}
             </Text>
             <Text style={styles.subtitle}>
-              {isEdit
-                ? 'Atualize os dados do brechó'
-                : from === 'stores'
-                  ? 'Cadastre outro brechó'
-                  : 'Etapa obrigatória do primeiro acesso'}
+              {from === 'stores'
+                ? 'Cadastre outro brechó'
+                : 'Etapa obrigatória do primeiro acesso'}
             </Text>
           </View>
 
@@ -170,9 +126,7 @@ export default function CreateStoreScreen() {
                 />
               </View>
               <Text style={styles.introText}>
-                {isEdit
-                  ? 'Revise as informações da sua loja.'
-                  : 'Cadastre o brechó para organizar estoque e preços por loja.'}
+                Cadastre o brechó para organizar estoque e preços por loja.
               </Text>
             </View>
 
@@ -210,14 +164,6 @@ export default function CreateStoreScreen() {
                   Toque no círculo para escolher uma imagem.
                 </Text>
               </View>
-              {isEdit && logoUrl ? (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setLogoUrl(null)}
-                >
-                  <Text style={styles.removeLogo}>Remover logo</Text>
-                </Pressable>
-              ) : null}
             </View>
 
             <View style={styles.fields}>
@@ -267,11 +213,7 @@ export default function CreateStoreScreen() {
               <AppFeedback
                 compact
                 variant="error"
-                title={
-                  isEdit
-                    ? 'Não foi possível atualizar a loja'
-                    : 'Não foi possível salvar a loja'
-                }
+                title="Não foi possível salvar a loja"
                 message={error}
                 onDismiss={() => setError('')}
               />
@@ -281,7 +223,7 @@ export default function CreateStoreScreen() {
               <AppButton
                 loading={loading}
                 onPress={handleSave}
-                title={isEdit ? 'Salvar alterações' : 'Salvar loja'}
+                title="Salvar loja"
                 style={styles.saveButton}
                 labelStyle={styles.buttonLabel}
               />
@@ -372,11 +314,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     color: colors.text.secondary,
-  },
-  removeLogo: {
-    fontFamily: fontFamilies.sansMedium,
-    fontSize: 10,
-    color: colors.action.secondary,
   },
   fields: { gap: 12 },
   fieldLabel: {
