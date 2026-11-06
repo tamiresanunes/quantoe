@@ -31,7 +31,7 @@ Para aplicar a formatação: `npm run format`.
 
 ## Fluxo de demonstração
 
-O aplicativo começa na tela de login. Use `ana@example.com` ou `bruna@example.com` com qualquer senha não vazia. O cadastro cria um usuário apenas em memória; após entrar, a tela de lojas mostra somente as lojas do usuário atual. O botão **Sair** volta ao login. A sessão e os cadastros simulados são reiniciados ao recarregar o aplicativo. Esta autenticação serve apenas para testar navegação e isolamento visual; o backend deverá validar a identidade e a autorização.
+O aplicativo começa na tela de login. Use `ana@example.com` ou `bruna@example.com` com a senha `Senha123!`. Uma senha incorreta mostra um erro. No cadastro, `ana@example.com` simula um e-mail já cadastrado. O cadastro cria um usuário apenas em memória; após entrar, a tela de lojas mostra somente as lojas do usuário atual. O botão **Sair** volta ao login. A sessão e os cadastros simulados são reiniciados ao recarregar o aplicativo. Esta autenticação serve apenas para testar navegação e isolamento visual; o backend deverá validar a identidade e a autorização.
 
 ## Organização
 

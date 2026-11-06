@@ -3,6 +3,8 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  type StyleProp,
+  type TextStyle,
   ViewStyle,
 } from 'react-native';
 
@@ -18,6 +20,8 @@ export type AppButtonProps = {
   loading?: boolean;
   size?: 'default' | 'small';
   style?: ViewStyle;
+  /** Estilo opcional do texto do botão. */
+  labelStyle?: StyleProp<TextStyle>;
 };
 
 export function AppButton({
@@ -28,6 +32,7 @@ export function AppButton({
   loading = false,
   size = 'default',
   style,
+  labelStyle,
 }: AppButtonProps) {
   const inactive = disabled || loading;
   const foreground =
@@ -62,7 +67,9 @@ export function AppButton({
       {loading ? (
         <ActivityIndicator color={foreground} />
       ) : (
-        <Text style={[styles.label, { color: foreground }]}>{title}</Text>
+        <Text style={[styles.label, { color: foreground }, labelStyle]}>
+          {title}
+        </Text>
       )}
     </Pressable>
   );
