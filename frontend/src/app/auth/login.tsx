@@ -25,8 +25,8 @@ import { fontFamilies } from '@/theme/typography';
 
 export default function LoginScreen() {
   const { height } = useWindowDimensions();
-  const heroHeight = Math.max(240, Math.round(height * 0.5));
-  const cardOverlap = Math.min(110, Math.round(heroHeight * 0.3));
+  const heroHeight = Math.round(height * 0.3);
+  const cardOverlap = Math.min(44, Math.round(heroHeight * 0.18));
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,7 +76,7 @@ export default function LoginScreen() {
           <View
             style={[
               styles.hero,
-              { minHeight: heroHeight, paddingBottom: cardOverlap + 20 },
+              { minHeight: heroHeight, paddingBottom: cardOverlap + 16 },
             ]}
           >
             <View style={styles.logo}>

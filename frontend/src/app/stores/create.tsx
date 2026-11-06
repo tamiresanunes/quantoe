@@ -27,7 +27,8 @@ import { fontFamilies } from '@/theme/typography';
 
 export default function CreateStoreScreen() {
   const { height } = useWindowDimensions();
-  const heroHeight = Math.max(285, Math.round(height * 0.5));
+  const heroHeight = Math.round(height * 0.3);
+  const cardTop = height < 650 ? 94 : 106;
   const { user, signOut } = useAuth();
   const [name, setName] = useState('');
   const [state, setState] = useState('');
@@ -102,12 +103,7 @@ export default function CreateStoreScreen() {
             </Text>
           </View>
 
-          <View
-            style={[
-              styles.card,
-              { marginTop: -Math.min(130, heroHeight * 0.45) },
-            ]}
-          >
+          <View style={[styles.card, { marginTop: cardTop - heroHeight }]}>
             <View style={styles.intro}>
               <View pointerEvents="none">
                 <SymbolView

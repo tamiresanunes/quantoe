@@ -89,7 +89,9 @@ export function AppSelect({
         >
           {selected?.label ?? placeholder}
         </Text>
-        <Text style={styles.chevron}>⌄</Text>
+        <Text style={[styles.chevron, compact && styles.compactChevron]}>
+          ⌄
+        </Text>
       </Pressable>
       {error ? (
         <Text accessibilityRole="alert" style={styles.error}>
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
   container: { gap: layout.labelGap },
   compactContainer: { gap: spacing.xxs },
   label: { ...textStyles.label, color: colors.text.primary },
-  compactLabel: { fontSize: 11 },
+  compactLabel: { fontSize: 11, lineHeight: 14 },
   trigger: {
     minHeight: componentSizes.field,
     borderWidth: 1,
@@ -159,14 +161,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   compactTrigger: {
-    minHeight: 38,
-    borderRadius: 13,
+    minHeight: 34,
+    height: 34,
+    borderRadius: 12,
     borderColor: colors.border.default,
+    paddingHorizontal: 10,
   },
   value: { ...textStyles.body, color: colors.text.primary, flex: 1 },
-  compactValue: { fontSize: 11 },
+  compactValue: { fontSize: 11, lineHeight: 15 },
   placeholder: { ...textStyles.body, color: colors.text.auxiliary },
   chevron: { ...textStyles.h3, color: colors.text.secondary },
+  compactChevron: { fontSize: 16, lineHeight: 20 },
   check: { ...textStyles.body, color: colors.action.primary },
   option: {
     minHeight: componentSizes.touchTarget,

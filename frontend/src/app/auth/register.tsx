@@ -26,7 +26,7 @@ import { fontFamilies } from '@/theme/typography';
 
 export default function RegisterScreen() {
   const { height } = useWindowDimensions();
-  const heroHeight = Math.max(240, Math.round(height * 0.5));
+  const heroHeight = Math.round(height * 0.3);
   const cardTop = height < 650 ? 90 : 104;
   const { signUp } = useAuth();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
