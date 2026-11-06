@@ -11,4 +11,11 @@ export interface CreateStoreInput {
 export interface StoreService {
   listByOwner(ownerId: ID): Promise<Store[]>;
   create(input: CreateStoreInput): Promise<Store>;
+  update(
+    ownerId: ID,
+    storeId: ID,
+    input: Omit<CreateStoreInput, 'ownerId'>,
+  ): Promise<Store>;
+  remove(ownerId: ID, storeId: ID): Promise<void>;
+  setActive(ownerId: ID, storeId: ID): Promise<Store>;
 }

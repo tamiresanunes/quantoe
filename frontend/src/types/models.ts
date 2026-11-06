@@ -14,4 +14,6 @@ export interface Store {
   logoUrl: string | null;
   city: string;
   state: string;
+  pieceCount: number;
+  isActive: boolean;
 }

@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -26,9 +26,11 @@ import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 
 export default function CreateStoreScreen() {
+  const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
+  const isEdit = !!id;
   const { height } = useWindowDimensions();
   const heroHeight = Math.round(height * 0.3);
-  const cardTop = height < 650 ? 94 : 106;
+  const cardTop = height < 650 ? 90 : 104;
   const { user, signOut } = useAuth();
   const [name, setName] = useState('');
   const [state, setState] = useState('');
@@ -37,6 +39,33 @@ export default function CreateStoreScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isEdit || !user) return;
+    let mounted = true;
+    storeService
+      .listByOwner(user.id)
+      .then((result) => {
+        if (!mounted) return;
+        const store = result.find((item) => item.id === id);
+        if (!store) throw new Error('Loja não encontrada.');
+        setName(store.name);
+        setState(store.state);
+        setCity(store.city);
+        setLogoUrl(store.logoUrl);
+      })
+      .catch((cause) => {
+        if (mounted)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'Não foi possível carregar a loja.',
+          );
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [id, isEdit, user]);
 
   async function handlePickLogo() {
     try {
@@ -62,14 +91,24 @@ export default function CreateStoreScreen() {
 
     setLoading(true);
     try {
-      await storeService.create({
-        ownerId: user.id,
-        name: name.trim(),
-        state,
-        city,
-        logoUrl,
-      });
-      router.replace({ pathname: '/stores', params: { storeCreated: '1' } });
+      if (isEdit && id) {
+        await storeService.update(user.id, id, {
+          name: name.trim(),
+          state,
+          city,
+          logoUrl,
+        });
+        router.replace({ pathname: '/stores', params: { storeUpdated: '1' } });
+      } else {
+        await storeService.create({
+          ownerId: user.id,
+          name: name.trim(),
+          state,
+          city,
+          logoUrl,
+        });
+        router.replace({ pathname: '/stores', params: { storeCreated: '1' } });
+      }
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -82,6 +121,10 @@ export default function CreateStoreScreen() {
   }
 
   async function handleCancel() {
+    if (isEdit || from === 'stores') {
+      router.replace('/stores');
+      return;
+    }
     await signOut();
     router.replace('/auth/login');
   }
@@ -97,9 +140,19 @@ export default function CreateStoreScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={[styles.hero, { minHeight: heroHeight }]}>
-            <Text style={styles.title}>Sua loja</Text>
+            <Text style={styles.title}>
+              {isEdit
+                ? 'Editar loja'
+                : from === 'stores'
+                  ? 'Nova loja'
+                  : 'Sua loja'}
+            </Text>
             <Text style={styles.subtitle}>
-              Etapa obrigatória do primeiro acesso
+              {isEdit
+                ? 'Atualize os dados do brechó'
+                : from === 'stores'
+                  ? 'Cadastre outro brechó'
+                  : 'Etapa obrigatória do primeiro acesso'}
             </Text>
           </View>
 
@@ -117,7 +170,9 @@ export default function CreateStoreScreen() {
                 />
               </View>
               <Text style={styles.introText}>
-                Cadastre o brechó para organizar estoque e preços por loja.
+                {isEdit
+                  ? 'Revise as informações da sua loja.'
+                  : 'Cadastre o brechó para organizar estoque e preços por loja.'}
               </Text>
             </View>
 
@@ -155,6 +210,14 @@ export default function CreateStoreScreen() {
                   Toque no círculo para escolher uma imagem.
                 </Text>
               </View>
+              {isEdit && logoUrl ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setLogoUrl(null)}
+                >
+                  <Text style={styles.removeLogo}>Remover logo</Text>
+                </Pressable>
+              ) : null}
             </View>
 
             <View style={styles.fields}>
@@ -204,7 +267,11 @@ export default function CreateStoreScreen() {
               <AppFeedback
                 compact
                 variant="error"
-                title="Não foi possível salvar a loja"
+                title={
+                  isEdit
+                    ? 'Não foi possível atualizar a loja'
+                    : 'Não foi possível salvar a loja'
+                }
                 message={error}
                 onDismiss={() => setError('')}
               />
@@ -214,7 +281,7 @@ export default function CreateStoreScreen() {
               <AppButton
                 loading={loading}
                 onPress={handleSave}
-                title="Salvar loja"
+                title={isEdit ? 'Salvar alterações' : 'Salvar loja'}
                 style={styles.saveButton}
                 labelStyle={styles.buttonLabel}
               />
@@ -240,7 +307,7 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 18,
-    paddingTop: 16,
+    paddingTop: 32,
     backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
@@ -305,6 +372,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     color: colors.text.secondary,
+  },
+  removeLogo: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 10,
+    color: colors.action.secondary,
   },
   fields: { gap: 12 },
   fieldLabel: {
