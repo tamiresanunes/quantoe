@@ -10,6 +10,7 @@ export interface SignUpInput {
 export interface AuthService {
   signIn(email: string, password: string): Promise<User>;
   signUp(input: SignUpInput): Promise<User>;
+  requestPasswordReset(email: string): Promise<void>;
   signOut(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
 }

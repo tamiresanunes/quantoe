@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -177,12 +176,7 @@ export default function LoginScreen() {
 
               <Pressable
                 accessibilityRole="button"
-                onPress={() =>
-                  Alert.alert(
-                    'Recuperar senha',
-                    'A recuperação de senha ainda não está disponível.',
-                  )
-                }
+                onPress={() => router.push('/auth/forgot-password')}
                 style={styles.forgotButton}
               >
                 <Text style={styles.forgotText}>Esqueci minha senha</Text>
