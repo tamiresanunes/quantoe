@@ -18,6 +18,8 @@ export type AppTextFieldProps = TextInputProps & {
   label: string;
   helperText?: string;
   error?: string;
+  /** Conteúdo no início do campo, como um ícone. */
+  leftAccessory?: ReactNode;
   /** Conteúdo no fim do campo, como o botão de mostrar senha. */
   rightAccessory?: ReactNode;
   labelStyle?: StyleProp<TextStyle>;
@@ -28,6 +30,7 @@ export function AppTextField({
   label,
   helperText,
   error,
+  leftAccessory,
   rightAccessory,
   labelStyle,
   fieldStyle,
@@ -49,6 +52,7 @@ export function AppTextField({
           !editable && styles.disabled,
         ]}
       >
+        {leftAccessory}
         <TextInput
           {...inputProps}
           accessibilityLabel={label}
