@@ -101,7 +101,12 @@ function EditStoreForm({
   }
 
   return (
-    <AppModal visible title="Editar loja" onClose={close}>
+    <AppModal
+      visible
+      title="Editar loja"
+      titleStyle={styles.modalTitle}
+      onClose={close}
+    >
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.content}
@@ -198,15 +203,19 @@ function EditStoreForm({
           <AppButton
             title="Cancelar"
             variant="secondary"
+            size="small"
             disabled={saving}
             onPress={close}
             style={styles.action}
+            labelStyle={styles.actionLabel}
           />
           <AppButton
             title="Salvar alterações"
+            size="small"
             loading={saving}
             onPress={save}
             style={styles.action}
+            labelStyle={styles.actionLabel}
           />
         </View>
       </ScrollView>
@@ -215,6 +224,11 @@ function EditStoreForm({
 }
 
 const styles = StyleSheet.create({
+  modalTitle: {
+    fontFamily: fontFamilies.display,
+    fontSize: 18,
+    lineHeight: 24,
+  },
   content: { gap: 14, paddingBottom: 4 },
   logoSection: { gap: 7 },
   label: {
@@ -254,5 +268,11 @@ const styles = StyleSheet.create({
   },
   fieldInput: { minHeight: 34, fontSize: 11, paddingVertical: 4 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  action: { flex: 1 },
+  action: {
+    flex: 1,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  actionLabel: { fontSize: 12, lineHeight: 16 },
 });
