@@ -19,7 +19,9 @@ import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
+import { isValidEmail } from '@/features/auth/validation';
 import { colors } from '@/theme/colors';
+import { spacing } from '@/theme/spacing';
 import { fontFamilies } from '@/theme/typography';
 
 export default function LoginScreen() {
@@ -30,15 +32,29 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const emailError = submitted
+    ? !email.trim()
+      ? 'Informe seu e-mail.'
+      : !isValidEmail(email)
+        ? 'Informe um e-mail válido.'
+        : undefined
+    : undefined;
+  const passwordError =
+    submitted && !password.trim() ? 'Informe sua senha.' : undefined;
+
   async function handleSignIn() {
-    setLoading(true);
+    setSubmitted(true);
     setError('');
+    if (!isValidEmail(email) || !password.trim()) return;
+
+    setLoading(true);
     try {
-      await signIn(email, password);
-      router.replace('/stores');
+      await signIn(email.trim(), password);
+      router.replace({ pathname: '/stores', params: { loggedIn: '1' } });
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : 'Não foi possível entrar.',
@@ -90,8 +106,12 @@ export default function LoginScreen() {
                 style={styles.fieldInput}
                 autoCapitalize="none"
                 autoComplete="email"
+                error={emailError}
                 keyboardType="email-address"
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  setError('');
+                }}
                 placeholder="tamires@brechoraiz.com"
                 returnKeyType="next"
                 value={email}
@@ -115,7 +135,11 @@ export default function LoginScreen() {
                 fieldStyle={styles.field}
                 style={styles.fieldInput}
                 autoComplete="current-password"
-                onChangeText={setPassword}
+                error={passwordError}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  setError('');
+                }}
                 placeholder="Digite sua senha"
                 secureTextEntry={!passwordVisible}
                 underlineColorAndroid="transparent"
@@ -135,13 +159,13 @@ export default function LoginScreen() {
                       <SymbolView
                         key={passwordVisible ? 'visible' : 'hidden'}
                         name={{
-                          ios: passwordVisible ? 'eye.slash' : 'eye',
+                          ios: passwordVisible ? 'eye' : 'eye.slash',
                           android: passwordVisible
-                            ? 'visibility_off'
-                            : 'visibility',
+                            ? 'visibility'
+                            : 'visibility_off',
                           web: passwordVisible
-                            ? 'visibility_off'
-                            : 'visibility',
+                            ? 'visibility'
+                            : 'visibility_off',
                         }}
                         size={16}
                         tintColor={colors.text.secondary}
@@ -165,12 +189,15 @@ export default function LoginScreen() {
               </Pressable>
 
               {error ? (
-                <AppFeedback
-                  variant="error"
-                  title="Não foi possível entrar"
-                  message={error}
-                  onDismiss={() => setError('')}
-                />
+                <View style={styles.noticeSlot}>
+                  <AppFeedback
+                    compact
+                    variant="error"
+                    title="Não foi possível entrar"
+                    message={error}
+                    onDismiss={() => setError('')}
+                  />
+                </View>
               ) : null}
 
               <AppButton
@@ -264,6 +291,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   form: { gap: 8, marginTop: 12 },
+  noticeSlot: { marginVertical: spacing.xxs },
   fieldLabel: {
     fontFamily: fontFamilies.sansMedium,
     fontSize: 11,
@@ -328,6 +356,6 @@ const styles = StyleSheet.create({
   footerLink: {
     fontFamily: fontFamilies.sansSemiBold,
     fontSize: 11,
-    color: colors.text.primary,
+    color: colors.action.secondary,
   },
 });

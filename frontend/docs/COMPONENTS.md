@@ -84,7 +84,10 @@ Para listas extensas, use `FlatList` com `AppListItem` como item; `AppList` é a
 | `message` | `string` | — | Detalhe útil para a pessoa. |
 | `actionLabel` | `string` | — | Texto da ação, exibida junto com `onAction`. |
 | `onAction` | `() => void` | — | Ação, como tentar novamente. |
-| `onDismiss` | `() => void` | — | Exibe botão para dispensar o aviso. |
+| `onDismiss` | `() => void` | — | Chamado ao fechar manualmente ou após 5 segundos. |
+| `compact` | `boolean` | `false` | Reduz o aviso para uso em formulários e confirmações breves. |
+
+Avisos de erro e sucesso desaparecem automaticamente após 5 segundos. O componente permanece no fluxo da tela enquanto está visível; use o espaçamento do contêiner para separá-lo dos demais elementos.
 
 ### `LoadingState`
 

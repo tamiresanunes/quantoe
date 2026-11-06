@@ -17,7 +17,10 @@ import { globalStyles } from '@/theme/styles';
 import type { Store } from '@/types/models';
 
 export default function StoresScreen() {
-  const { registered } = useLocalSearchParams<{ registered?: string }>();
+  const { registered, loggedIn } = useLocalSearchParams<{
+    registered?: string;
+    loggedIn?: string;
+  }>();
   const { user, signOut } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,22 +79,33 @@ export default function StoresScreen() {
       style={globalStyles.screen}
     >
       <AppHeader title="Minhas lojas" subtitle={user?.name} />
-      {registered === '1' ? (
+      {registered === '1' || loggedIn === '1' ? (
         <AppFeedback
+          compact
           variant="success"
-          title="Conta criada com sucesso"
+          title={
+            registered === '1'
+              ? 'Conta criada com sucesso'
+              : 'Acesso realizado com sucesso'
+          }
           message="Você já pode acessar suas lojas."
-          onDismiss={() => router.setParams({ registered: '' })}
+          onDismiss={() => router.setParams({ registered: '', loggedIn: '' })}
         />
       ) : null}
       {loading ? <LoadingState message="Carregando lojas..." /> : null}
       {!loading && error ? (
         <AppFeedback
+          compact
           variant="error"
           title="Falha ao carregar lojas"
           message={error}
-          actionLabel="Tentar novamente"
-          onAction={retryLoadingStores}
+        />
+      ) : null}
+      {!loading && error ? (
+        <AppButton
+          onPress={retryLoadingStores}
+          title="Tentar novamente"
+          variant="secondary"
         />
       ) : null}
       {!loading && !error && stores.length === 0 ? (
