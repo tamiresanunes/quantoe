@@ -39,7 +39,7 @@ export default function StoresScreen() {
   const { height } = useWindowDimensions();
   const heroHeight = Math.round(height * 0.3);
   const listTop = height < 650 ? 88 : 96;
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const {
     stores,
     activeStore,
@@ -53,7 +53,6 @@ export default function StoresScreen() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
   const [editTarget, setEditTarget] = useState<Store | null>(null);
-  const [signOutOpen, setSignOutOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function retryLoadingStores() {
@@ -119,28 +118,15 @@ export default function StoresScreen() {
     }
   }
 
-  async function handleSignOut() {
-    setBusy(true);
-    try {
-      await signOut();
-      setSignOutOpen(false);
-      router.replace('/auth/login');
-    } catch (cause) {
-      showError(cause);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { minHeight: heroHeight }]}>
           <View style={styles.header}>
             <Pressable
-              accessibilityLabel="Sair da conta"
+              accessibilityLabel="Voltar para o perfil"
               accessibilityRole="button"
-              onPress={() => setSignOutOpen(true)}
+              onPress={() => router.replace('/profile')}
               style={styles.backButton}
             >
               <View pointerEvents="none">
@@ -393,16 +379,6 @@ export default function StoresScreen() {
         loading={busy}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-      />
-      <ConfirmDialog
-        visible={signOutOpen}
-        title="Sair da conta?"
-        message="Você precisará entrar novamente para acessar suas lojas."
-        confirmLabel="Sair"
-        destructive
-        loading={busy}
-        onCancel={() => setSignOutOpen(false)}
-        onConfirm={handleSignOut}
       />
     </SafeAreaView>
   );

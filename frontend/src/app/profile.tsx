@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppBottomNav } from '@/components/app-bottom-nav';
+import { AppButton } from '@/components/app-button';
 import { AppModal } from '@/components/app-modal';
 import { useAuth } from '@/features/auth/auth-context';
 import { useStores } from '@/features/stores/store-context';
@@ -61,7 +62,7 @@ function MenuGroup({ items }: { items: MenuItem[] }) {
 export default function ProfileScreen() {
   const { height } = useWindowDimensions();
   const heroHeight = Math.round(height * 0.3);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { stores, activeStore } = useStores();
   const [openSection, setOpenSection] = useState<string | null>(null);
   const storeCount = stores.length;
@@ -116,7 +117,7 @@ export default function ProfileScreen() {
                   android: 'person_outline',
                   web: 'person_outline',
                 },
-                action: () => setOpenSection('Meus dados'),
+                action: () => router.push('/profile/edit'),
               },
               {
                 label: 'Minhas lojas',
@@ -178,13 +179,16 @@ export default function ProfileScreen() {
         onClose={() => setOpenSection(null)}
         titleStyle={styles.modalTitle}
       >
-        {openSection === 'Meus dados' ? (
-          <View style={styles.details}>
-            <Text style={styles.detailLabel}>Nome</Text>
-            <Text style={styles.detailValue}>{user?.name}</Text>
-            <Text style={styles.detailLabel}>E-mail</Text>
-            <Text style={styles.detailValue}>{user?.email}</Text>
-          </View>
+        {openSection === 'Configurações' ? (
+          <AppButton
+            title="Sair da conta"
+            variant="secondary"
+            onPress={async () => {
+              await signOut();
+              setOpenSection(null);
+              router.replace('/auth/login');
+            }}
+          />
         ) : (
           <Text style={styles.comingSoon}>
             Esta seção estará disponível em breve.
@@ -296,18 +300,6 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   modalTitle: { fontFamily: fontFamilies.display, fontSize: 19 },
-  details: { gap: 3 },
-  detailLabel: {
-    color: colors.action.secondary,
-    fontFamily: fontFamilies.sansMedium,
-    fontSize: 10,
-    marginTop: 6,
-  },
-  detailValue: {
-    color: colors.text.primary,
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 13,
-  },
   comingSoon: {
     color: colors.text.secondary,
     fontFamily: fontFamilies.sansRegular,

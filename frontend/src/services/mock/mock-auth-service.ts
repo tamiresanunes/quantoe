@@ -3,6 +3,7 @@ import { isValidEmail } from '@/features/auth/validation';
 import type {
   AuthService,
   SignUpInput,
+  UpdateProfileInput,
 } from '@/services/contracts/auth-service';
 import type { User } from '@/types/models';
 
@@ -48,6 +49,35 @@ export const mockAuthService: AuthService = {
     accounts.push({ user, password: input.password });
     currentUser = user;
     return user;
+  },
+  async updateProfile(input: UpdateProfileInput) {
+    await simulateRequest();
+    if (!currentUser)
+      throw new Error('Entre na sua conta para editar seus dados.');
+    const account = accounts.find((item) => item.user.id === currentUser?.id);
+    if (!account) throw new Error('Conta não encontrada.');
+    const name = input.name.trim();
+    const email = input.email.trim().toLowerCase();
+    if (!name) throw new Error('Informe seu nome.');
+    if (!isValidEmail(email)) throw new Error('Informe um e-mail válido.');
+    if (
+      accounts.some(
+        (item) => item.user.id !== account.user.id && item.user.email === email,
+      )
+    ) {
+      throw new Error('Este e-mail já está cadastrado.');
+    }
+    if (input.currentPassword || input.newPassword) {
+      if (account.password !== input.currentPassword)
+        throw new Error('A senha atual está incorreta.');
+      if (!input.newPassword || input.newPassword.length < 8) {
+        throw new Error('A nova senha deve ter pelo menos 8 caracteres.');
+      }
+      account.password = input.newPassword;
+    }
+    account.user = { ...account.user, name, email };
+    currentUser = account.user;
+    return account.user;
   },
   async signOut() {
     currentUser = null;
