@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
+import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppFeedback } from '@/components/app-feedback';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -133,7 +134,7 @@ export default function StoresScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { minHeight: heroHeight }]}>
           <View style={styles.header}>
             <Pressable
@@ -373,6 +374,7 @@ export default function StoresScreen() {
           ) : null}
         </View>
       </ScrollView>
+      <AppBottomNav active="home" />
       <EditStoreModal
         store={editTarget}
         onClose={() => setEditTarget(null)}
@@ -408,6 +410,7 @@ export default function StoresScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
+  scroll: { flex: 1 },
   content: { flexGrow: 1, alignItems: 'center', paddingBottom: 24 },
   hero: {
     width: '100%',
