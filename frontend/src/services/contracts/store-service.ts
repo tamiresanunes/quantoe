@@ -1,4 +1,4 @@
-import type { ID, Store } from '@/types/models';
+import type { ID, Store, StorePiece } from '@/types/models';
 
 export interface CreateStoreInput {
   ownerId: ID;
@@ -10,6 +10,7 @@ export interface CreateStoreInput {
 
 export interface StoreService {
   listByOwner(ownerId: ID): Promise<Store[]>;
+  listPieces(ownerId: ID, storeId: ID): Promise<StorePiece[]>;
   create(input: CreateStoreInput): Promise<Store>;
   update(
     ownerId: ID,

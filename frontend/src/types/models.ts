@@ -17,3 +17,9 @@ export interface Store {
   pieceCount: number;
   isActive: boolean;
 }
+
+export interface StorePiece {
+  id: ID;
+  storeId: ID;
+  name: string;
+}

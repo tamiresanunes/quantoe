@@ -21,7 +21,7 @@ import { AppSelect } from '@/components/app-select';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { cityOptions, states } from '@/features/stores/brazil-locations';
-import { storeService } from '@/services';
+import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 
@@ -31,6 +31,7 @@ export default function CreateStoreScreen() {
   const heroHeight = Math.round(height * 0.3);
   const cardTop = height < 650 ? 90 : 104;
   const { user, signOut } = useAuth();
+  const { createStore } = useStores();
   const [name, setName] = useState('');
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
@@ -63,8 +64,7 @@ export default function CreateStoreScreen() {
 
     setLoading(true);
     try {
-      await storeService.create({
-        ownerId: user.id,
+      await createStore({
         name: name.trim(),
         state,
         city,

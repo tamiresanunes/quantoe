@@ -1,4 +1,5 @@
 import { mockStores } from '@/mocks/fixtures/stores';
+import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { citiesByState, states } from '@/features/stores/brazil-locations';
 import type {
   CreateStoreInput,
@@ -36,6 +37,13 @@ export const mockStoreService: StoreService = {
     return stores
       .filter((store) => store.ownerId === ownerId)
       .map((store) => ({ ...store }));
+  },
+  async listPieces(ownerId, storeId) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    return mockStorePieces
+      .filter((piece) => piece.storeId === storeId)
+      .map((piece) => ({ ...piece }));
   },
   async create(input: CreateStoreInput) {
     await requireOwner(input.ownerId);

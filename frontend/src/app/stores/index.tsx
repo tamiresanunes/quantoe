@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Image,
   Pressable,
@@ -19,7 +19,7 @@ import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { EditStoreModal } from '@/features/stores/edit-store-modal';
-import { storeService } from '@/services';
+import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 import type { Store } from '@/types/models';
@@ -28,7 +28,6 @@ type Notice = {
   variant: 'success' | 'error';
   title: string;
   message?: string;
-  id: number;
 };
 
 export default function StoresScreen() {
@@ -40,67 +39,39 @@ export default function StoresScreen() {
   const heroHeight = Math.round(height * 0.3);
   const listTop = height < 650 ? 88 : 96;
   const { user, signOut } = useAuth();
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const {
+    stores,
+    activeStore,
+    activePieces,
+    loading,
+    error: loadError,
+    refresh,
+    activateStore,
+    removeStore,
+  } = useStores();
   const [notice, setNotice] = useState<Notice | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
   const [editTarget, setEditTarget] = useState<Store | null>(null);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
-    let mounted = true;
-    storeService
-      .listByOwner(user.id)
-      .then((result) => {
-        if (!mounted) return;
-        setLoadFailed(false);
-        if (result.length === 0) {
-          router.replace('/stores/create');
-          return;
-        }
-        setStores(result);
-        if (storeCreated === '1' || loggedIn === '1') {
-          setNotice({
-            variant: 'success',
-            title:
-              storeCreated === '1' ? 'Loja cadastrada' : 'Acesso realizado',
-            message: 'Suas lojas estão prontas para usar.',
-            id: Date.now(),
-          });
-          router.setParams({
-            storeCreated: '',
-            loggedIn: '',
-          });
-        }
-      })
-      .catch((cause) => {
-        if (mounted) {
-          setLoadFailed(true);
-          showError(cause);
-        }
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [user, reloadKey, storeCreated, loggedIn]);
+  async function retryLoadingStores() {
+    setBusy(true);
+    try {
+      await refresh();
+    } catch (cause) {
+      showError(cause);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function handleEditedStore(updated: Store) {
-    setStores((current) =>
-      current.map((item) => (item.id === updated.id ? updated : item)),
-    );
     setEditTarget(null);
     setNotice({
       variant: 'success',
       title: 'Loja atualizada',
-      message: 'As alterações foram salvas.',
-      id: Date.now(),
+      message: `As alterações em ${updated.name} foram salvas.`,
     });
   }
 
@@ -109,7 +80,6 @@ export default function StoresScreen() {
       variant: 'error',
       title: 'Não foi possível concluir a ação',
       message: cause instanceof Error ? cause.message : 'Tente novamente.',
-      id: Date.now(),
     });
   }
 
@@ -117,15 +87,11 @@ export default function StoresScreen() {
     if (!user || store.isActive || busy) return;
     setBusy(true);
     try {
-      await storeService.setActive(user.id, store.id);
-      setStores((current) =>
-        current.map((item) => ({ ...item, isActive: item.id === store.id })),
-      );
+      await activateStore(store.id);
       setNotice({
         variant: 'success',
         title: 'Loja ativa alterada',
         message: `${store.name} está ativa agora.`,
-        id: Date.now(),
       });
     } catch (cause) {
       showError(cause);
@@ -138,19 +104,12 @@ export default function StoresScreen() {
     if (!user || !deleteTarget) return;
     setBusy(true);
     try {
-      await storeService.remove(user.id, deleteTarget.id);
-      const remaining = await storeService.listByOwner(user.id);
+      await removeStore(deleteTarget.id);
       setDeleteTarget(null);
-      if (remaining.length === 0) {
-        router.replace('/stores/create');
-        return;
-      }
-      setStores(remaining);
       setNotice({
         variant: 'success',
         title: 'Loja excluída',
         message: 'A loja foi removida da sua lista.',
-        id: Date.now(),
       });
     } catch (cause) {
       showError(cause);
@@ -195,9 +154,16 @@ export default function StoresScreen() {
                 />
               </View>
             </Pressable>
-            <Text accessibilityRole="header" style={styles.title}>
-              Minhas lojas
-            </Text>
+            <View style={styles.headingText}>
+              <Text accessibilityRole="header" style={styles.title}>
+                Minhas lojas
+              </Text>
+              {activeStore ? (
+                <Text numberOfLines={1} style={styles.currentStore}>
+                  Loja ativa: {activeStore.name}
+                </Text>
+              ) : null}
+            </View>
             <Pressable
               accessibilityLabel="Adicionar loja"
               accessibilityRole="button"
@@ -224,7 +190,6 @@ export default function StoresScreen() {
           {notice ? (
             <View style={styles.noticeSlot}>
               <AppFeedback
-                key={notice.id}
                 compact
                 variant={notice.variant}
                 title={notice.title}
@@ -233,25 +198,53 @@ export default function StoresScreen() {
               />
             </View>
           ) : null}
+          {!notice && (storeCreated === '1' || loggedIn === '1') ? (
+            <View style={styles.noticeSlot}>
+              <AppFeedback
+                compact
+                variant="success"
+                title={
+                  storeCreated === '1' ? 'Loja cadastrada' : 'Acesso realizado'
+                }
+                message="Suas lojas estão prontas para usar."
+                onDismiss={() =>
+                  router.setParams({ storeCreated: '', loggedIn: '' })
+                }
+              />
+            </View>
+          ) : null}
           {loading ? <LoadingState message="Carregando lojas..." /> : null}
-          {!loading && loadFailed ? (
+          {!loading && loadError ? (
+            <AppFeedback
+              compact
+              variant="error"
+              title="Falha ao carregar lojas"
+              message={loadError}
+            />
+          ) : null}
+          {!loading && loadError ? (
             <AppButton
               title="Tentar novamente"
               variant="secondary"
-              onPress={() => {
-                setLoading(true);
-                setReloadKey((key) => key + 1);
-              }}
+              loading={busy}
+              onPress={retryLoadingStores}
             />
           ) : null}
-          {!loading && !loadFailed && stores.length === 0 ? (
+          {!loading && !loadError && stores.length === 0 ? (
             <EmptyState
-              title="Nenhuma loja encontrada"
-              message="Cadastre uma loja para começar."
+              title="Você ainda não tem lojas"
+              message="Cadastre seu primeiro brechó para organizar peças e preços por loja."
+              actionLabel="Cadastrar loja"
+              onAction={() =>
+                router.push({
+                  pathname: '/stores/create',
+                  params: { from: 'stores' },
+                })
+              }
             />
           ) : null}
           {!loading &&
-            !loadFailed &&
+            !loadError &&
             stores.map((store) => (
               <View
                 key={store.id}
@@ -344,16 +337,44 @@ export default function StoresScreen() {
                 </Pressable>
               </View>
             ))}
-          {!loading && !loadFailed && stores.length > 0 ? (
+          {!loading && !loadError && stores.length > 0 ? (
             <Text style={styles.hint}>
               Toque em uma loja para torná-la ativa.
             </Text>
+          ) : null}
+          {!loading && !loadError && activeStore ? (
+            <View style={styles.activeSummary}>
+              <Text style={styles.summaryEyebrow}>
+                NO CONTEXTO DO APLICATIVO
+              </Text>
+              <Text style={styles.summaryTitle}>{activeStore.name}</Text>
+              <Text style={styles.summaryMeta}>
+                {activeStore.city} · {activeStore.state} ·{' '}
+                {activeStore.pieceCount}{' '}
+                {activeStore.pieceCount === 1
+                  ? 'peça cadastrada'
+                  : 'peças cadastradas'}
+              </Text>
+              <Text style={styles.summaryLabel}>
+                Amostra do estoque desta loja
+              </Text>
+              {activePieces.length > 0 ? (
+                activePieces.map((piece) => (
+                  <Text key={piece.id} style={styles.summaryPiece}>
+                    • {piece.name}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.summaryEmpty}>
+                  Nenhuma peça cadastrada nesta loja.
+                </Text>
+              )}
+            </View>
           ) : null}
         </View>
       </ScrollView>
       <EditStoreModal
         store={editTarget}
-        ownerId={user?.id ?? ''}
         onClose={() => setEditTarget(null)}
         onSaved={handleEditedStore}
       />
@@ -411,11 +432,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface.primary,
   },
   title: {
-    flex: 1,
     fontFamily: fontFamilies.display,
     fontSize: 21,
     lineHeight: 28,
     color: colors.text.primary,
+  },
+  headingText: { flex: 1, minWidth: 0 },
+  currentStore: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 9,
+    lineHeight: 13,
+    color: colors.action.secondary,
   },
   addButton: {
     width: 34,
@@ -497,5 +524,48 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     color: colors.text.secondary,
+  },
+  activeSummary: {
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 17,
+    backgroundColor: colors.surface.primary,
+    gap: 5,
+  },
+  summaryEyebrow: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    color: colors.action.secondary,
+  },
+  summaryTitle: {
+    fontFamily: fontFamilies.display,
+    fontSize: 18,
+    lineHeight: 24,
+    color: colors.text.primary,
+  },
+  summaryMeta: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 10,
+    lineHeight: 14,
+    color: colors.text.secondary,
+  },
+  summaryLabel: {
+    marginTop: 7,
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 10,
+    color: colors.text.primary,
+  },
+  summaryPiece: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 10,
+    lineHeight: 15,
+    color: colors.text.secondary,
+  },
+  summaryEmpty: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 10,
+    lineHeight: 15,
+    color: colors.text.auxiliary,
   },
 });

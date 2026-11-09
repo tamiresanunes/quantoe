@@ -16,14 +16,13 @@ import { AppModal } from '@/components/app-modal';
 import { AppSelect } from '@/components/app-select';
 import { AppTextField } from '@/components/app-text-field';
 import { cityOptions, states } from '@/features/stores/brazil-locations';
-import { storeService } from '@/services';
+import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 import type { Store } from '@/types/models';
 
 type EditStoreModalProps = {
   store: Store | null;
-  ownerId: string;
   onClose: () => void;
   onSaved: (store: Store) => void;
 };
@@ -34,7 +33,6 @@ export function EditStoreModal(props: EditStoreModalProps) {
     <EditStoreForm
       key={props.store.id}
       store={props.store}
-      ownerId={props.ownerId}
       onClose={props.onClose}
       onSaved={props.onSaved}
     />
@@ -43,7 +41,6 @@ export function EditStoreModal(props: EditStoreModalProps) {
 
 function EditStoreForm({
   store,
-  ownerId,
   onClose,
   onSaved,
 }: Omit<EditStoreModalProps, 'store'> & { store: Store }) {
@@ -54,6 +51,7 @@ function EditStoreForm({
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const { updateStore } = useStores();
 
   function close() {
     if (!saving) onClose();
@@ -82,7 +80,7 @@ function EditStoreForm({
     if (!name.trim() || !state || !city) return;
     setSaving(true);
     try {
-      const updated = await storeService.update(ownerId, store.id, {
+      const updated = await updateStore(store.id, {
         name: name.trim(),
         state,
         city,

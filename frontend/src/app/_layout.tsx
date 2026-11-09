@@ -8,6 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
+import { StoreProvider } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 
@@ -64,7 +65,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <AppStack />
+      <StoreProvider>
+        <AppStack />
+      </StoreProvider>
     </AuthProvider>
   );
 }
