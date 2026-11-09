@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +21,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { EditStoreModal } from '@/features/stores/edit-store-modal';
 import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 import type { Store } from '@/types/models';
 
@@ -36,9 +36,8 @@ export default function StoresScreen() {
     storeCreated?: string;
     loggedIn?: string;
   }>();
-  const { height } = useWindowDimensions();
-  const heroHeight = Math.round(height * 0.3);
-  const listTop = height < 650 ? 88 : 96;
+  const { compact, heroHeight, contentWidth } = useResponsiveLayout();
+  const listTop = compact ? 88 : 96;
   const { user } = useAuth();
   const {
     stores,
@@ -173,7 +172,12 @@ export default function StoresScreen() {
           </View>
         </View>
 
-        <View style={[styles.listArea, { marginTop: listTop - heroHeight }]}>
+        <View
+          style={[
+            styles.listArea,
+            { width: contentWidth, marginTop: listTop - heroHeight },
+          ]}
+        >
           {notice ? (
             <View style={styles.noticeSlot}>
               <AppFeedback

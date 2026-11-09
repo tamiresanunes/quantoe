@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,11 +18,11 @@ import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { isValidEmail } from '@/features/auth/validation';
 import { colors } from '@/theme/colors';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 export default function EditProfileScreen() {
-  const { height } = useWindowDimensions();
-  const heroHeight = Math.round(height * 0.3);
+  const { heroHeight, contentWidth, cardPadding } = useResponsiveLayout();
   const { user, updateProfile } = useAuth();
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -112,12 +111,12 @@ export default function EditProfileScreen() {
         <SymbolView
           name={
             visible
-              ? {
+              ? { ios: 'eye', android: 'visibility', web: 'visibility' }
+              : {
                   ios: 'eye.slash',
                   android: 'visibility_off',
                   web: 'visibility_off',
                 }
-              : { ios: 'eye', android: 'visibility', web: 'visibility' }
           }
           size={17}
           tintColor={colors.text.secondary}
@@ -159,7 +158,12 @@ export default function EditProfileScreen() {
               </Text>
             </View>
           </View>
-          <View style={[styles.formArea, { marginTop: 90 - heroHeight }]}>
+          <View
+            style={[
+              styles.formArea,
+              { width: contentWidth, marginTop: 90 - heroHeight },
+            ]}
+          >
             {notice ? (
               <AppFeedback
                 compact
@@ -169,7 +173,7 @@ export default function EditProfileScreen() {
                 onDismiss={() => setNotice(null)}
               />
             ) : null}
-            <View style={styles.card}>
+            <View style={[styles.card, { padding: cardPadding }]}>
               <AppTextField
                 label="Nome"
                 value={name}

@@ -3,13 +3,18 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/theme/colors';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 type AppBottomNavProps = { active: 'home' | 'profile' };
 
 export function AppBottomNav({ active }: AppBottomNavProps) {
+  const { compact } = useResponsiveLayout();
   return (
-    <View style={styles.bar} accessibilityRole="tablist">
+    <View
+      style={[styles.bar, compact && styles.compactBar]}
+      accessibilityRole="tablist"
+    >
       <Pressable
         accessibilityRole="tab"
         accessibilityLabel="Início"
@@ -97,7 +102,9 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
 const styles = StyleSheet.create({
   bar: {
     height: 56,
-    marginHorizontal: 7,
+    width: '96%',
+    maxWidth: 440,
+    alignSelf: 'center',
     marginBottom: 5,
     borderRadius: 19,
     backgroundColor: colors.text.primary,
@@ -105,6 +112,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
   },
+  compactBar: { width: '98%' },
   item: {
     flex: 1,
     minHeight: 48,

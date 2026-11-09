@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +17,7 @@ import { AppModal } from '@/components/app-modal';
 import { useAuth } from '@/features/auth/auth-context';
 import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 type SymbolName = ComponentProps<typeof SymbolView>['name'];
@@ -60,8 +60,7 @@ function MenuGroup({ items }: { items: MenuItem[] }) {
 }
 
 export default function ProfileScreen() {
-  const { height } = useWindowDimensions();
-  const heroHeight = Math.round(height * 0.3);
+  const { heroHeight, contentWidth } = useResponsiveLayout();
   const { user, signOut } = useAuth();
   const { stores, activeStore } = useStores();
   const [openSection, setOpenSection] = useState<string | null>(null);
@@ -82,7 +81,12 @@ export default function ProfileScreen() {
             Perfil
           </Text>
         </View>
-        <View style={[styles.profileContent, { marginTop: 60 - heroHeight }]}>
+        <View
+          style={[
+            styles.profileContent,
+            { width: contentWidth, marginTop: 60 - heroHeight },
+          ]}
+        >
           <View style={styles.identityCard}>
             <View style={styles.avatar}>
               {user?.photoUrl ? (
