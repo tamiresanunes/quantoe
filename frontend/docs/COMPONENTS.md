@@ -39,6 +39,8 @@ Use `value` e `onChangeText` para campos controlados. `editable={false}` informa
 | `placeholder` | `string` | `'Selecione uma opção'` | Texto antes da escolha. |
 | `error` | `string` | — | Mensagem de erro e borda destacada. |
 | `disabled` | `boolean` | `false` | Impede abertura do diálogo. |
+| `compact` | `boolean` | `false` | Reduz altura e tipografia do seletor para formulários compactos. |
+| `searchable` | `boolean` | `false` | Mostra busca no diálogo, com comparação sem acentos. |
 
 ## Conteúdo e navegação
 

@@ -8,6 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
+import { StoreProvider } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 
@@ -38,7 +39,8 @@ function AppStack() {
         />
       </Stack.Protected>
       <Stack.Protected guard={!!user} redirectTo="/auth/login">
-        <Stack.Screen name="stores/index" options={{ title: 'Minhas lojas' }} />
+        <Stack.Screen name="stores/index" options={{ headerShown: false }} />
+        <Stack.Screen name="stores/create" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );
@@ -63,7 +65,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <AppStack />
+      <StoreProvider>
+        <AppStack />
+      </StoreProvider>
     </AuthProvider>
   );
 }

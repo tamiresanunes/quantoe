@@ -1,5 +1,13 @@
 import { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+} from 'react-native';
 
 import { colors } from '@/theme/colors';
 import { radii, spacing } from '@/theme/spacing';
@@ -10,9 +18,16 @@ type AppModalProps = {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  titleStyle?: StyleProp<TextStyle>;
 };
 
-export function AppModal({ visible, title, children, onClose }: AppModalProps) {
+export function AppModal({
+  visible,
+  title,
+  children,
+  onClose,
+  titleStyle,
+}: AppModalProps) {
   return (
     <Modal
       animationType="fade"
@@ -30,7 +45,7 @@ export function AppModal({ visible, title, children, onClose }: AppModalProps) {
         />
         <View style={styles.panel}>
           <View style={styles.heading}>
-            <Text accessibilityRole="header" style={styles.title}>
+            <Text accessibilityRole="header" style={[styles.title, titleStyle]}>
               {title}
             </Text>
             <Pressable

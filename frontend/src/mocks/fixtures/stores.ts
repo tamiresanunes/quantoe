@@ -8,6 +8,8 @@ export const mockStores: readonly Store[] = [
     logoUrl: null,
     city: 'Rio de Janeiro',
     state: 'RJ',
+    pieceCount: 42,
+    isActive: true,
   },
   {
     id: 'store-02',
@@ -16,6 +18,8 @@ export const mockStores: readonly Store[] = [
     logoUrl: null,
     city: 'Niterói',
     state: 'RJ',
+    pieceCount: 38,
+    isActive: false,
   },
   {
     id: 'store-03',
@@ -24,5 +28,7 @@ export const mockStores: readonly Store[] = [
     logoUrl: null,
     city: 'São Paulo',
     state: 'SP',
+    pieceCount: 11,
+    isActive: true,
   },
 ];

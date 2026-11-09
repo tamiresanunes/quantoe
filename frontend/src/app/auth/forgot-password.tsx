@@ -23,6 +23,8 @@ import { fontFamilies } from '@/theme/typography';
 
 export default function ForgotPasswordScreen() {
   const { height } = useWindowDimensions();
+  const heroHeight = Math.round(height * 0.3);
+  const cardTop = height < 650 ? 145 : 150;
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,9 +70,7 @@ export default function ForgotPasswordScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <View
-            style={[styles.hero, { minHeight: Math.max(330, height * 0.55) }]}
-          >
+          <View style={[styles.hero, { minHeight: heroHeight }]}>
             <View style={styles.header}>
               <Pressable
                 accessibilityLabel="Voltar para login"
@@ -97,66 +97,66 @@ export default function ForgotPasswordScreen() {
               Informe o e-mail cadastrado. Enviaremos um link para você criar
               uma nova senha.
             </Text>
+          </View>
 
-            <View style={styles.card}>
-              <AppTextField
-                label="E-mail"
-                labelStyle={styles.fieldLabel}
-                fieldStyle={styles.field}
-                style={styles.fieldInput}
-                autoCapitalize="none"
-                autoComplete="email"
-                error={emailError}
-                keyboardType="email-address"
-                onChangeText={(value) => {
-                  setEmail(value);
-                  setError('');
-                  setSuccess(false);
-                }}
-                onSubmitEditing={() => void handleSendLink()}
-                placeholder="tamires@brechoraiz.com"
-                returnKeyType="send"
-                value={email}
+          <View style={[styles.card, { marginTop: cardTop - heroHeight }]}>
+            <AppTextField
+              label="E-mail"
+              labelStyle={styles.fieldLabel}
+              fieldStyle={styles.field}
+              style={styles.fieldInput}
+              autoCapitalize="none"
+              autoComplete="email"
+              error={emailError}
+              keyboardType="email-address"
+              onChangeText={(value) => {
+                setEmail(value);
+                setError('');
+                setSuccess(false);
+              }}
+              onSubmitEditing={() => void handleSendLink()}
+              placeholder="tamires@brechoraiz.com"
+              returnKeyType="send"
+              value={email}
+            />
+
+            {error ? (
+              <AppFeedback
+                compact
+                variant="error"
+                title="Não foi possível enviar o link"
+                message={error}
+                onDismiss={() => setError('')}
               />
-
-              {error ? (
-                <AppFeedback
-                  compact
-                  variant="error"
-                  title="Não foi possível enviar o link"
-                  message={error}
-                  onDismiss={() => setError('')}
-                />
-              ) : null}
-              {success ? (
-                <AppFeedback
-                  compact
-                  variant="success"
-                  title="Solicitação recebida"
-                  message="Demonstração: nenhum e-mail foi enviado."
-                  onDismiss={() => setSuccess(false)}
-                />
-              ) : null}
-
-              <AppButton
-                loading={loading}
-                onPress={handleSendLink}
-                title="Enviar link"
-                style={styles.sendButton}
-                labelStyle={styles.sendLabel}
+            ) : null}
+            {success ? (
+              <AppFeedback
+                compact
+                variant="success"
+                title="Solicitação recebida"
+                message="Demonstração: nenhum e-mail foi enviado."
+                onDismiss={() => setSuccess(false)}
               />
-            </View>
+            ) : null}
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Não tem conta? </Text>
-              <Pressable
-                accessibilityLabel="Criar conta"
-                accessibilityRole="button"
-                onPress={() => router.replace('/auth/register')}
-              >
-                <Text style={styles.footerLink}>Criar conta</Text>
-              </Pressable>
-            </View>
+            <AppButton
+              loading={loading}
+              onPress={handleSendLink}
+              title="Enviar link"
+              style={styles.sendButton}
+              labelStyle={styles.sendLabel}
+            />
+          </View>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Não tem conta? </Text>
+            <Pressable
+              accessibilityLabel="Criar conta"
+              accessibilityRole="button"
+              onPress={() => router.replace('/auth/register')}
+            >
+              <Text style={styles.footerLink}>Criar conta</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -166,7 +166,7 @@ export default function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
-  content: { flexGrow: 1 },
+  content: { flexGrow: 1, alignItems: 'center', paddingBottom: 24 },
   hero: {
     width: '100%',
     paddingHorizontal: 18,
@@ -200,11 +200,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   card: {
-    width: '100%',
-    maxWidth: 440,
+    width: '88%',
+    maxWidth: 404,
     alignSelf: 'center',
     gap: 12,
-    marginTop: 16,
     padding: 14,
     borderRadius: 18,
     backgroundColor: colors.surface.primary,

@@ -14,4 +14,12 @@ export interface Store {
   logoUrl: string | null;
   city: string;
   state: string;
+  pieceCount: number;
+  isActive: boolean;
+}
+
+export interface StorePiece {
+  id: ID;
+  storeId: ID;
+  name: string;
 }
