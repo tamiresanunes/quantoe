@@ -58,13 +58,10 @@ function toDraft(preferences: StockPreferences): PreferencesDraft {
 }
 
 function validNumber(value: string, min: number, max: number) {
-  if (!/^\d+$/.test(value)) return false;
-  const number = Number(value);
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) return false;
+  const number = Number(trimmed);
   return Number.isInteger(number) && number >= min && number <= max;
-}
-
-function digits(value: string, maxLength: number) {
-  return value.replace(/\D/g, '').slice(0, maxLength);
 }
 
 export default function StockPreferencesScreen() {
@@ -127,7 +124,7 @@ export default function StockPreferencesScreen() {
             ...current,
             minimumByCategory: {
               ...current.minimumByCategory,
-              [category]: digits(value, 3),
+              [category]: value,
             },
           }
         : current,
@@ -139,14 +136,20 @@ export default function StockPreferencesScreen() {
     if (!draft || !ownerId || !storeId) return;
     setSubmitted(true);
     setNotice(null);
-    if (
+    const invalid =
       !validNumber(draft.defaultMinimum, 0, 999) ||
       stockCategories.some(
         (category) => !validNumber(draft.minimumByCategory[category], 0, 999),
       ) ||
-      !validNumber(draft.idleDays, 1, 3650)
-    )
+      !validNumber(draft.idleDays, 1, 3650);
+    if (invalid) {
+      setNotice({
+        variant: 'error',
+        title: 'Confira os valores',
+        message: 'Use números inteiros nos limites indicados.',
+      });
       return;
+    }
 
     setSaving(true);
     try {
@@ -260,9 +263,10 @@ export default function StockPreferencesScreen() {
                   label="Estoque mínimo padrão"
                   value={draft.defaultMinimum}
                   onChangeText={(value) =>
-                    changeDraft({ defaultMinimum: digits(value, 3) })
+                    changeDraft({ defaultMinimum: value })
                   }
                   keyboardType="number-pad"
+                  maxLength={10}
                   error={
                     submitted && !validNumber(draft.defaultMinimum, 0, 999)
                       ? 'Informe um número de 0 a 999.'
@@ -296,6 +300,7 @@ export default function StockPreferencesScreen() {
                               : undefined
                           }
                           keyboardType="number-pad"
+                          maxLength={10}
                           onChangeText={(value) =>
                             changeCategory(category, value)
                           }
@@ -366,10 +371,9 @@ export default function StockPreferencesScreen() {
                 <AppTextField
                   label="Considerar parada após (dias)"
                   value={draft.idleDays}
-                  onChangeText={(value) =>
-                    changeDraft({ idleDays: digits(value, 4) })
-                  }
+                  onChangeText={(value) => changeDraft({ idleDays: value })}
                   keyboardType="number-pad"
+                  maxLength={10}
                   error={
                     submitted && !validNumber(draft.idleDays, 1, 3650)
                       ? 'Informe de 1 a 3650 dias.'

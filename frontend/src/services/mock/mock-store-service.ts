@@ -1,9 +1,11 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { mockStores } from '@/mocks/fixtures/stores';
 import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { citiesByState, states } from '@/features/stores/brazil-locations';
 import {
   defaultStockPreferences,
-  stockCategories,
+  isValidStockPreferences,
   type StockPreferences,
 } from '@/features/stores/stock-preferences';
 import type {
@@ -14,10 +16,9 @@ import { mockAuthService } from '@/services/mock/mock-auth-service';
 import type { Store } from '@/types/models';
 
 const stores: Store[] = mockStores.map((store) => ({ ...store }));
-const stockPreferences = new Map<string, StockPreferences>();
 
 function preferenceKey(ownerId: string, storeId: string) {
-  return `${ownerId}:${storeId}`;
+  return `@quantoe/stock-preferences/v1/${encodeURIComponent(ownerId)}/${encodeURIComponent(storeId)}`;
 }
 
 function clonePreferences(preferences: StockPreferences): StockPreferences {
@@ -25,10 +26,6 @@ function clonePreferences(preferences: StockPreferences): StockPreferences {
     ...preferences,
     minimumByCategory: { ...preferences.minimumByCategory },
   };
-}
-
-function validMinimum(value: number) {
-  return Number.isInteger(value) && value >= 0 && value <= 999;
 }
 
 async function requireOwner(ownerId: string) {
@@ -97,9 +94,9 @@ export const mockStoreService: StoreService = {
   async remove(ownerId, storeId) {
     await requireOwner(ownerId);
     const store = requireStore(ownerId, storeId);
+    await AsyncStorage.removeItem(preferenceKey(ownerId, storeId));
     const index = stores.indexOf(store);
     stores.splice(index, 1);
-    stockPreferences.delete(preferenceKey(ownerId, storeId));
     if (store.isActive) {
       const next = stores.find((item) => item.ownerId === ownerId);
       if (next) next.isActive = true;
@@ -116,27 +113,40 @@ export const mockStoreService: StoreService = {
   async getStockPreferences(ownerId, storeId) {
     await requireOwner(ownerId);
     requireStore(ownerId, storeId);
-    return clonePreferences(
-      stockPreferences.get(preferenceKey(ownerId, storeId)) ??
-        defaultStockPreferences(),
-    );
+    let stored: string | null;
+    try {
+      stored = await AsyncStorage.getItem(preferenceKey(ownerId, storeId));
+    } catch {
+      throw new Error('Não foi possível carregar as preferências salvas.');
+    }
+    if (stored === null) return defaultStockPreferences();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      throw new Error('As preferências salvas estão inválidas.');
+    }
+    if (!isValidStockPreferences(parsed))
+      throw new Error('As preferências salvas estão inválidas.');
+    return clonePreferences(parsed);
   },
   async saveStockPreferences(ownerId, storeId, preferences) {
     await requireOwner(ownerId);
     requireStore(ownerId, storeId);
-    if (
-      !validMinimum(preferences.defaultMinimum) ||
-      stockCategories.some(
-        (category) => !validMinimum(preferences.minimumByCategory[category]),
-      ) ||
-      !Number.isInteger(preferences.idleDays) ||
-      preferences.idleDays < 1 ||
-      preferences.idleDays > 3650
-    ) {
+    if (!isValidStockPreferences(preferences)) {
       throw new Error('Confira os valores das regras de estoque.');
     }
     const saved = clonePreferences(preferences);
-    stockPreferences.set(preferenceKey(ownerId, storeId), saved);
+    try {
+      await AsyncStorage.setItem(
+        preferenceKey(ownerId, storeId),
+        JSON.stringify(saved),
+      );
+    } catch {
+      throw new Error(
+        'Não foi possível salvar as preferências neste dispositivo.',
+      );
+    }
     return clonePreferences(saved);
   },
 };
