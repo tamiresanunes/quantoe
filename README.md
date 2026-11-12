@@ -94,7 +94,7 @@ As tabelas completas de pontuação, os exemplos e as regras dos mocks estão em
 
 ## Como executar
 
-O aplicativo inicial já pode ser executado com serviços simulados. Consulte também o [README do frontend](frontend/README.md) para o fluxo de demonstração e verificações.
+O aplicativo inicial já pode ser executado com serviços simulados.
 
 ```bash
 cd frontend
