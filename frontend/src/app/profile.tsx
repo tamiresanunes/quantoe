@@ -152,7 +152,7 @@ export default function ProfileScreen() {
                   android: 'layers',
                   web: 'layers',
                 },
-                action: () => setOpenSection('Categorias'),
+                action: () => router.push('/profile/categories'),
               },
               {
                 label: 'Marcas',

@@ -21,5 +21,11 @@ export interface Store {
 export interface StorePiece {
   id: ID;
   storeId: ID;
+  categoryId: ID;
+  name: string;
+}
+
+export interface Category {
+  id: ID;
   name: string;
 }
