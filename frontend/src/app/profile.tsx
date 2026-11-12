@@ -139,7 +139,7 @@ export default function ProfileScreen() {
                   android: 'inventory_2',
                   web: 'inventory_2',
                 },
-                action: () => setOpenSection('Preferências de estoque'),
+                action: () => router.push('/profile/preferences'),
               },
             ]}
           />

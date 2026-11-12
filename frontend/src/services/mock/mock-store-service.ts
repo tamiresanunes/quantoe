@@ -1,6 +1,11 @@
 import { mockStores } from '@/mocks/fixtures/stores';
 import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { citiesByState, states } from '@/features/stores/brazil-locations';
+import {
+  defaultStockPreferences,
+  stockCategories,
+  type StockPreferences,
+} from '@/features/stores/stock-preferences';
 import type {
   CreateStoreInput,
   StoreService,
@@ -9,6 +14,22 @@ import { mockAuthService } from '@/services/mock/mock-auth-service';
 import type { Store } from '@/types/models';
 
 const stores: Store[] = mockStores.map((store) => ({ ...store }));
+const stockPreferences = new Map<string, StockPreferences>();
+
+function preferenceKey(ownerId: string, storeId: string) {
+  return `${ownerId}:${storeId}`;
+}
+
+function clonePreferences(preferences: StockPreferences): StockPreferences {
+  return {
+    ...preferences,
+    minimumByCategory: { ...preferences.minimumByCategory },
+  };
+}
+
+function validMinimum(value: number) {
+  return Number.isInteger(value) && value >= 0 && value <= 999;
+}
 
 async function requireOwner(ownerId: string) {
   const user = await mockAuthService.getCurrentUser();
@@ -78,6 +99,7 @@ export const mockStoreService: StoreService = {
     const store = requireStore(ownerId, storeId);
     const index = stores.indexOf(store);
     stores.splice(index, 1);
+    stockPreferences.delete(preferenceKey(ownerId, storeId));
     if (store.isActive) {
       const next = stores.find((item) => item.ownerId === ownerId);
       if (next) next.isActive = true;
@@ -90,5 +112,31 @@ export const mockStoreService: StoreService = {
       if (store.ownerId === ownerId) store.isActive = store.id === storeId;
     }
     return { ...selected };
+  },
+  async getStockPreferences(ownerId, storeId) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    return clonePreferences(
+      stockPreferences.get(preferenceKey(ownerId, storeId)) ??
+        defaultStockPreferences(),
+    );
+  },
+  async saveStockPreferences(ownerId, storeId, preferences) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    if (
+      !validMinimum(preferences.defaultMinimum) ||
+      stockCategories.some(
+        (category) => !validMinimum(preferences.minimumByCategory[category]),
+      ) ||
+      !Number.isInteger(preferences.idleDays) ||
+      preferences.idleDays < 1 ||
+      preferences.idleDays > 3650
+    ) {
+      throw new Error('Confira os valores das regras de estoque.');
+    }
+    const saved = clonePreferences(preferences);
+    stockPreferences.set(preferenceKey(ownerId, storeId), saved);
+    return clonePreferences(saved);
   },
 };
