@@ -1,10 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import {
+  categoryColors,
+  categoryIcons,
+} from '@/features/categories/category-options';
 import { mockCategories } from '@/mocks/fixtures/categories';
 import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { mockAuthService } from '@/services/mock/mock-auth-service';
 import { mockStoreService } from '@/services/mock/mock-store-service';
-import type { Category } from '@/types/models';
+import type { Category, CategoryIcon } from '@/types/models';
+
+export type CreateCategoryInput = {
+  name: string;
+  icon: CategoryIcon;
+  color: string;
+  minimumStock: number;
+  description: string;
+};
 
 function key(ownerId: string) {
   return `@quantoe/categories/v1/${encodeURIComponent(ownerId)}`;
@@ -24,7 +36,17 @@ function validCategories(value: unknown): value is Category[] {
         item &&
         typeof item.id === 'string' &&
         typeof item.name === 'string' &&
-        item.name.trim().length > 0,
+        item.name.trim().length > 0 &&
+        (item.icon === undefined ||
+          categoryIcons.some((icon) => icon.value === item.icon)) &&
+        (item.color === undefined ||
+          categoryColors.some((color) => color.value === item.color)) &&
+        (item.minimumStock === undefined ||
+          (Number.isInteger(item.minimumStock) &&
+            item.minimumStock >= 0 &&
+            item.minimumStock <= 999)) &&
+        (item.description === undefined ||
+          typeof item.description === 'string'),
     )
   );
 }
@@ -78,11 +100,31 @@ function validatedName(
 
 export const mockCategoryService = {
   list: read,
-  async create(ownerId: string, name: string) {
+  async create(ownerId: string, input: CreateCategoryInput) {
     const categories = await read(ownerId);
+    if (!categoryIcons.some((item) => item.value === input.icon)) {
+      throw new Error('Selecione um ícone válido.');
+    }
+    if (!categoryColors.some((item) => item.value === input.color)) {
+      throw new Error('Selecione uma cor válida.');
+    }
+    if (
+      !Number.isInteger(input.minimumStock) ||
+      input.minimumStock < 0 ||
+      input.minimumStock > 999
+    ) {
+      throw new Error('Informe um estoque mínimo entre 0 e 999.');
+    }
+    if (input.description.trim().length > 200) {
+      throw new Error('Use até 200 caracteres na descrição.');
+    }
     const category: Category = {
       id: `category-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: validatedName(name, categories),
+      name: validatedName(input.name, categories),
+      icon: input.icon,
+      color: input.color,
+      minimumStock: input.minimumStock,
+      description: input.description.trim(),
     };
     await write(ownerId, [...categories, category]);
     return category;

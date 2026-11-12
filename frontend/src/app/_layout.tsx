@@ -51,6 +51,10 @@ function AppStack() {
           name="profile/categories"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="profile/categories/new"
+          options={{ headerShown: false }}
+        />
       </Stack.Protected>
     </Stack>
   );

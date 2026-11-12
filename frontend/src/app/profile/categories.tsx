@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -29,15 +29,19 @@ import type { Category } from '@/types/models';
 type Notice = { variant: 'success' | 'error'; title: string; message?: string };
 
 export default function CategoriesScreen() {
+  const { created } = useLocalSearchParams<{ created?: string }>();
   const { user } = useAuth();
   const { compact, heroHeight, contentWidth } = useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(
+    created === '1'
+      ? { variant: 'success', title: 'Categoria cadastrada' }
+      : null,
+  );
   const [query, setQuery] = useState('');
-  const [newName, setNewName] = useState('');
   const [editTarget, setEditTarget] = useState<Category | null>(null);
   const [editName, setEditName] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
@@ -90,23 +94,6 @@ export default function CategoriesScreen() {
       setLoadError(null);
     } catch (cause) {
       setLoadError(errorMessage(cause));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function addCategory() {
-    if (!user || busy) return;
-    setBusy(true);
-    setNotice(null);
-    try {
-      const added = await mockCategoryService.create(user.id, newName);
-      setCategories((current) => [...current, added]);
-      setNewName('');
-      setQuery('');
-      setNotice({ variant: 'success', title: 'Categoria adicionada' });
-    } catch (cause) {
-      showError(cause);
     } finally {
       setBusy(false);
     }
@@ -224,33 +211,23 @@ export default function CategoriesScreen() {
                 returnKeyType="search"
               />
             </View>
-            <View style={styles.addRow}>
-              <TextInput
-                accessibilityLabel="Nome da nova categoria"
-                placeholder="Adicionar nova"
-                placeholderTextColor={colors.text.auxiliary}
-                value={newName}
-                onChangeText={setNewName}
-                onSubmitEditing={addCategory}
-                returnKeyType="done"
-                maxLength={40}
-                style={styles.addInput}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Adicionar categoria"
-                accessibilityState={{ disabled: busy }}
-                disabled={busy}
-                onPress={addCategory}
-                style={styles.addButton}
-              >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Adicionar nova categoria"
+              onPress={() => router.push('/profile/categories/new')}
+              style={styles.addRow}
+            >
+              <View style={styles.addInput}>
+                <Text style={styles.addPlaceholder}>Adicionar nova</Text>
+              </View>
+              <View style={styles.addButton}>
                 <SymbolView
                   name={{ ios: 'plus', android: 'add', web: 'add' }}
                   size={19}
                   tintColor={colors.text.inverse}
                 />
-              </Pressable>
-            </View>
+              </View>
+            </Pressable>
 
             {notice ? (
               <AppFeedback
@@ -258,7 +235,10 @@ export default function CategoriesScreen() {
                 variant={notice.variant}
                 title={notice.title}
                 message={notice.message}
-                onDismiss={() => setNotice(null)}
+                onDismiss={() => {
+                  setNotice(null);
+                  if (created === '1') router.setParams({ created: '' });
+                }}
               />
             ) : null}
             {loading ? (
@@ -283,7 +263,9 @@ export default function CategoriesScreen() {
             {!loading && !loadError && categories.length === 0 ? (
               <EmptyState
                 title="Nenhuma categoria cadastrada"
-                message="Digite um nome acima para adicionar sua primeira categoria."
+                message="Adicione sua primeira categoria para organizar as peças."
+                actionLabel="Adicionar categoria"
+                onAction={() => router.push('/profile/categories/new')}
               />
             ) : null}
             {!loading &&
@@ -453,9 +435,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: colors.surface.primary,
     paddingHorizontal: 12,
+    justifyContent: 'center',
+  },
+  addPlaceholder: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 12,
-    color: colors.text.primary,
+    color: colors.text.auxiliary,
   },
   addButton: {
     width: 38,
