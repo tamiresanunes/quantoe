@@ -18,6 +18,13 @@ export type CreateCategoryInput = {
   description: string;
 };
 
+export class CategoryNameError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CategoryNameError';
+  }
+}
+
 function key(ownerId: string) {
   return `@quantoe/categories/v1/${encodeURIComponent(ownerId)}`;
 }
@@ -83,17 +90,24 @@ function validatedName(
   currentId?: string,
 ) {
   const trimmed = name.trim().replace(/\s+/g, ' ');
-  if (!trimmed) throw new Error('Informe o nome da categoria.');
-  if (trimmed.length > 40) throw new Error('Use até 40 caracteres no nome.');
+  if (!trimmed) throw new CategoryNameError('Informe o nome da categoria.');
+  if (trimmed.length > 40)
+    throw new CategoryNameError('Use até 40 caracteres no nome.');
+  const key = (value: string) =>
+    value
+      .trim()
+      .replace(/\s+/g, ' ')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('pt-BR');
   if (
     categories.some(
-      (item) =>
-        item.id !== currentId &&
-        item.name.toLocaleLowerCase('pt-BR') ===
-          trimmed.toLocaleLowerCase('pt-BR'),
+      (item) => item.id !== currentId && key(item.name) === key(trimmed),
     )
   ) {
-    throw new Error('Já existe uma categoria com esse nome.');
+    throw new CategoryNameError(
+      'Você já cadastrou uma categoria com esse nome.',
+    );
   }
   return trimmed;
 }
@@ -102,6 +116,7 @@ export const mockCategoryService = {
   list: read,
   async create(ownerId: string, input: CreateCategoryInput) {
     const categories = await read(ownerId);
+    const name = validatedName(input.name, categories);
     if (!categoryIcons.some((item) => item.value === input.icon)) {
       throw new Error('Selecione um ícone válido.');
     }
@@ -120,7 +135,7 @@ export const mockCategoryService = {
     }
     const category: Category = {
       id: `category-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: validatedName(input.name, categories),
+      name,
       icon: input.icon,
       color: input.color,
       minimumStock: input.minimumStock,

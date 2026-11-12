@@ -20,7 +20,10 @@ import {
   categoryIcons,
 } from '@/features/categories/category-options';
 import { useAuth } from '@/features/auth/auth-context';
-import { mockCategoryService } from '@/services/mock/mock-category-service';
+import {
+  CategoryNameError,
+  mockCategoryService,
+} from '@/services/mock/mock-category-service';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
@@ -38,6 +41,7 @@ export default function NewCategoryScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const selectedIcon =
     categoryIcons.find((item) => item.value === icon) ?? categoryIcons[0];
@@ -48,8 +52,8 @@ export default function NewCategoryScreen() {
     if (!user || saving) return;
     setSubmitted(true);
     setError(null);
+    setNameError(null);
     if (!name.trim() || !validMinimum) {
-      setError('Confira o nome e o estoque mínimo antes de salvar.');
       return;
     }
     setSaving(true);
@@ -66,7 +70,11 @@ export default function NewCategoryScreen() {
         params: { created: '1' },
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Tente novamente.');
+      if (cause instanceof CategoryNameError) {
+        setNameError(cause.message);
+      } else {
+        setError(cause instanceof Error ? cause.message : 'Tente novamente.');
+      }
     } finally {
       setSaving(false);
     }
@@ -144,14 +152,18 @@ export default function NewCategoryScreen() {
               label="Nome da categoria"
               placeholder="Ex.: Vestidos"
               value={name}
-              onChangeText={setName}
+              onChangeText={(value) => {
+                setName(value);
+                setNameError(null);
+              }}
               maxLength={40}
               autoCapitalize="sentences"
               returnKeyType="next"
               error={
-                submitted && !name.trim()
+                nameError ||
+                (submitted && !name.trim()
                   ? 'Informe o nome da categoria.'
-                  : undefined
+                  : undefined)
               }
             />
 
