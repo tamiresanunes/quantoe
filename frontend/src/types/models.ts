@@ -21,5 +21,18 @@ export interface Store {
 export interface StorePiece {
   id: ID;
   storeId: ID;
+  categoryId: ID;
   name: string;
 }
+
+export interface Category {
+  id: ID;
+  name: string;
+  icon?: CategoryIcon;
+  color?: string;
+  minimumStock?: number;
+  description?: string;
+}
+
+export type CategoryIcon =
+  'clothing' | 'jewelry' | 'bag' | 'shoes' | 'watch' | 'sparkles';
