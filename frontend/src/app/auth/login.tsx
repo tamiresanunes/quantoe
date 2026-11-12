@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,11 +20,11 @@ import { useAuth } from '@/features/auth/auth-context';
 import { isValidEmail } from '@/features/auth/validation';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 export default function LoginScreen() {
-  const { height } = useWindowDimensions();
-  const heroHeight = Math.round(height * 0.3);
+  const { heroHeight, authCardWidth, cardPadding } = useResponsiveLayout();
   const cardOverlap = Math.min(44, Math.round(heroHeight * 0.18));
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
@@ -91,7 +90,16 @@ export default function LoginScreen() {
             <Text style={styles.brandSubtitle}>Precificação de brechó</Text>
           </View>
 
-          <View style={[styles.card, { marginTop: -cardOverlap }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                width: authCardWidth,
+                paddingHorizontal: cardPadding,
+                marginTop: -cardOverlap,
+              },
+            ]}
+          >
             <Text style={styles.welcomeTitle}>Bem-vinda de volta</Text>
             <Text style={styles.welcomeDescription}>
               Entre para continuar precificando as peças do seu brechó.

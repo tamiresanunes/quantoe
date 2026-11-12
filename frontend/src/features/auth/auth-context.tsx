@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
-import type { SignUpInput } from '@/services/contracts/auth-service';
+import type {
+  SignUpInput,
+  UpdateProfileInput,
+} from '@/services/contracts/auth-service';
 import { authService } from '@/services';
 import type { User } from '@/types/models';
 
@@ -8,6 +11,7 @@ interface AuthContextValue {
   user: User | null;
   signIn(email: string, password: string): Promise<void>;
   signUp(input: SignUpInput): Promise<void>;
+  updateProfile(input: UpdateProfileInput): Promise<void>;
   signOut(): Promise<void>;
 }
 
@@ -24,13 +28,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await authService.signUp(input));
   }
 
+  async function updateProfile(input: UpdateProfileInput) {
+    setUser(await authService.updateProfile(input));
+  }
+
   async function signOut() {
     await authService.signOut();
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{ user, signIn, signUp, updateProfile, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );

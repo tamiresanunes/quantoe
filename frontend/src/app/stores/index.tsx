@@ -7,12 +7,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
+import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppFeedback } from '@/components/app-feedback';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -21,6 +21,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { EditStoreModal } from '@/features/stores/edit-store-modal';
 import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 import type { Store } from '@/types/models';
 
@@ -35,10 +36,9 @@ export default function StoresScreen() {
     storeCreated?: string;
     loggedIn?: string;
   }>();
-  const { height } = useWindowDimensions();
-  const heroHeight = Math.round(height * 0.3);
-  const listTop = height < 650 ? 88 : 96;
-  const { user, signOut } = useAuth();
+  const { compact, heroHeight, contentWidth } = useResponsiveLayout();
+  const listTop = compact ? 88 : 96;
+  const { user } = useAuth();
   const {
     stores,
     activeStore,
@@ -52,7 +52,6 @@ export default function StoresScreen() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Store | null>(null);
   const [editTarget, setEditTarget] = useState<Store | null>(null);
-  const [signOutOpen, setSignOutOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function retryLoadingStores() {
@@ -118,28 +117,15 @@ export default function StoresScreen() {
     }
   }
 
-  async function handleSignOut() {
-    setBusy(true);
-    try {
-      await signOut();
-      setSignOutOpen(false);
-      router.replace('/auth/login');
-    } catch (cause) {
-      showError(cause);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { minHeight: heroHeight }]}>
           <View style={styles.header}>
             <Pressable
-              accessibilityLabel="Sair da conta"
+              accessibilityLabel="Voltar para o perfil"
               accessibilityRole="button"
-              onPress={() => setSignOutOpen(true)}
+              onPress={() => router.replace('/profile')}
               style={styles.backButton}
             >
               <View pointerEvents="none">
@@ -186,7 +172,12 @@ export default function StoresScreen() {
           </View>
         </View>
 
-        <View style={[styles.listArea, { marginTop: listTop - heroHeight }]}>
+        <View
+          style={[
+            styles.listArea,
+            { width: contentWidth, marginTop: listTop - heroHeight },
+          ]}
+        >
           {notice ? (
             <View style={styles.noticeSlot}>
               <AppFeedback
@@ -373,6 +364,7 @@ export default function StoresScreen() {
           ) : null}
         </View>
       </ScrollView>
+      <AppBottomNav active="home" />
       <EditStoreModal
         store={editTarget}
         onClose={() => setEditTarget(null)}
@@ -392,22 +384,13 @@ export default function StoresScreen() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
-      <ConfirmDialog
-        visible={signOutOpen}
-        title="Sair da conta?"
-        message="Você precisará entrar novamente para acessar suas lojas."
-        confirmLabel="Sair"
-        destructive
-        loading={busy}
-        onCancel={() => setSignOutOpen(false)}
-        onConfirm={handleSignOut}
-      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
+  scroll: { flex: 1 },
   content: { flexGrow: 1, alignItems: 'center', paddingBottom: 24 },
   hero: {
     width: '100%',

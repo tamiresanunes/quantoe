@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,13 +22,14 @@ import { useAuth } from '@/features/auth/auth-context';
 import { cityOptions, states } from '@/features/stores/brazil-locations';
 import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 export default function CreateStoreScreen() {
   const { from } = useLocalSearchParams<{ from?: string }>();
-  const { height } = useWindowDimensions();
-  const heroHeight = Math.round(height * 0.3);
-  const cardTop = height < 650 ? 90 : 104;
+  const { compact, heroHeight, contentWidth, cardPadding } =
+    useResponsiveLayout();
+  const cardTop = compact ? 90 : 104;
   const { user, signOut } = useAuth();
   const { createStore } = useStores();
   const [name, setName] = useState('');
@@ -112,7 +112,16 @@ export default function CreateStoreScreen() {
             </Text>
           </View>
 
-          <View style={[styles.card, { marginTop: cardTop - heroHeight }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                width: contentWidth,
+                padding: cardPadding,
+                marginTop: cardTop - heroHeight,
+              },
+            ]}
+          >
             <View style={styles.intro}>
               <View pointerEvents="none">
                 <SymbolView

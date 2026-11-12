@@ -1,4 +1,5 @@
 import type { ID, Store, StorePiece } from '@/types/models';
+import type { StockPreferences } from '@/features/stores/stock-preferences';
 
 export interface CreateStoreInput {
   ownerId: ID;
@@ -19,4 +20,10 @@ export interface StoreService {
   ): Promise<Store>;
   remove(ownerId: ID, storeId: ID): Promise<void>;
   setActive(ownerId: ID, storeId: ID): Promise<Store>;
+  getStockPreferences(ownerId: ID, storeId: ID): Promise<StockPreferences>;
+  saveStockPreferences(
+    ownerId: ID,
+    storeId: ID,
+    preferences: StockPreferences,
+  ): Promise<StockPreferences>;
 }

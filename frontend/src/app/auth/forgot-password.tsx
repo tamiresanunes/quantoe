@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,12 +18,13 @@ import { AppTextField } from '@/components/app-text-field';
 import { isValidEmail } from '@/features/auth/validation';
 import { authService } from '@/services';
 import { colors } from '@/theme/colors';
+import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 export default function ForgotPasswordScreen() {
-  const { height } = useWindowDimensions();
-  const heroHeight = Math.round(height * 0.3);
-  const cardTop = height < 650 ? 145 : 150;
+  const { compact, heroHeight, narrowCardWidth, cardPadding } =
+    useResponsiveLayout();
+  const cardTop = compact ? 145 : 150;
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -99,7 +99,16 @@ export default function ForgotPasswordScreen() {
             </Text>
           </View>
 
-          <View style={[styles.card, { marginTop: cardTop - heroHeight }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                width: narrowCardWidth,
+                padding: cardPadding,
+                marginTop: cardTop - heroHeight,
+              },
+            ]}
+          >
             <AppTextField
               label="E-mail"
               labelStyle={styles.fieldLabel}
