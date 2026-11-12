@@ -1,18 +1,35 @@
 import { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+} from 'react-native';
 
 import { colors } from '@/theme/colors';
 import { radii, spacing } from '@/theme/spacing';
 import { textStyles } from '@/theme/typography';
+import { useResponsiveLayout } from '@/theme/responsive';
 
 type AppModalProps = {
   visible: boolean;
   title: string;
   children: ReactNode;
   onClose: () => void;
+  titleStyle?: StyleProp<TextStyle>;
 };
 
-export function AppModal({ visible, title, children, onClose }: AppModalProps) {
+export function AppModal({
+  visible,
+  title,
+  children,
+  onClose,
+  titleStyle,
+}: AppModalProps) {
+  const { compact } = useResponsiveLayout();
   return (
     <Modal
       animationType="fade"
@@ -21,16 +38,16 @@ export function AppModal({ visible, title, children, onClose }: AppModalProps) {
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, compact && styles.compactOverlay]}>
         <Pressable
           accessibilityLabel="Fechar diálogo"
           accessibilityRole="button"
           onPress={onClose}
           style={StyleSheet.absoluteFill}
         />
-        <View style={styles.panel}>
+        <View style={[styles.panel, compact && styles.compactPanel]}>
           <View style={styles.heading}>
-            <Text accessibilityRole="header" style={styles.title}>
+            <Text accessibilityRole="header" style={[styles.title, titleStyle]}>
               {title}
             </Text>
             <Pressable
@@ -58,6 +75,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: 'rgba(51, 42, 37, 0.55)',
   },
+  compactOverlay: { padding: spacing.sm },
   panel: {
     width: '100%',
     maxWidth: 480,
@@ -67,6 +85,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     maxHeight: '80%',
   },
+  compactPanel: { padding: spacing.md, maxHeight: '90%' },
   heading: {
     flexDirection: 'row',
     alignItems: 'center',

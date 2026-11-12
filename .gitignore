@@ -1,0 +1,30 @@
+# Dependências e saídas geradas
+node_modules/
+.expo/
+dist/
+web-build/
+coverage/
+expo-env.d.ts
+*.tsbuildinfo
+.kotlin/
+/frontend/ios/
+/frontend/android/
+
+# Dados locais e credenciais
+.env
+.env.*
+!.env.example
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+
+# Logs e arquivos temporários
+*.log
+*.stackdump
+.metro-health-check*
+*.orig.*
+.DS_Store
+Thumbs.db

@@ -8,6 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
+import { StoreProvider } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 
@@ -30,11 +31,22 @@ function AppStack() {
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Protected guard={!user} redirectTo="/stores">
-        <Stack.Screen name="auth/login" options={{ title: 'Entrar' }} />
-        <Stack.Screen name="auth/register" options={{ title: 'Criar conta' }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="auth/forgot-password"
+          options={{ headerShown: false }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!!user} redirectTo="/auth/login">
-        <Stack.Screen name="stores/index" options={{ title: 'Minhas lojas' }} />
+        <Stack.Screen name="stores/index" options={{ headerShown: false }} />
+        <Stack.Screen name="stores/create" options={{ headerShown: false }} />
+        <Stack.Screen name="profile" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="profile/preferences"
+          options={{ headerShown: false }}
+        />
       </Stack.Protected>
     </Stack>
   );
@@ -59,7 +71,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <AppStack />
+      <StoreProvider>
+        <AppStack />
+      </StoreProvider>
     </AuthProvider>
   );
 }
