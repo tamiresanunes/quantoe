@@ -41,10 +41,30 @@ function AppStack() {
       <Stack.Protected guard={!!user} redirectTo="/auth/login">
         <Stack.Screen name="stores/index" options={{ headerShown: false }} />
         <Stack.Screen name="stores/create" options={{ headerShown: false }} />
+        <Stack.Screen name="inventory/index" options={{ headerShown: false }} />
+        <Stack.Screen name="inventory/new" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="inventory/detail"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="inventory/price" options={{ headerShown: false }} />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/preferences"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="profile/categories"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="profile/categories/new"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="profile/brands" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="profile/brands/new"
           options={{ headerShown: false }}
         />
       </Stack.Protected>

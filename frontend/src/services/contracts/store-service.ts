@@ -1,4 +1,11 @@
-import type { ID, Store, StorePiece } from '@/types/models';
+import type {
+  ID,
+  PieceCondition,
+  PieceStatus,
+  PieceStyle,
+  Store,
+  StorePiece,
+} from '@/types/models';
 import type { StockPreferences } from '@/features/stores/stock-preferences';
 
 export interface CreateStoreInput {
@@ -9,9 +16,44 @@ export interface CreateStoreInput {
   state: string;
 }
 
+export interface CreatePieceInput {
+  name: string;
+  photoUri: string | null;
+  size: string;
+  categoryId: ID;
+  brandId: ID;
+  condition: PieceCondition;
+  style: PieceStyle;
+  acquisitionPrice: number;
+  quantity: number;
+  acquisitionPlace: string;
+  acquisitionDate: string;
+  collection: string;
+  notes: string;
+  status: PieceStatus;
+}
+
 export interface StoreService {
   listByOwner(ownerId: ID): Promise<Store[]>;
   listPieces(ownerId: ID, storeId: ID): Promise<StorePiece[]>;
+  nextPieceCode(ownerId: ID): Promise<string>;
+  createPiece(
+    ownerId: ID,
+    storeId: ID,
+    input: CreatePieceInput,
+  ): Promise<StorePiece>;
+  updatePiece(
+    ownerId: ID,
+    storeId: ID,
+    pieceId: ID,
+    input: CreatePieceInput,
+  ): Promise<StorePiece>;
+  setPiecePrice(
+    ownerId: ID,
+    storeId: ID,
+    pieceId: ID,
+    salePrice: number,
+  ): Promise<StorePiece>;
   create(input: CreateStoreInput): Promise<Store>;
   update(
     ownerId: ID,
