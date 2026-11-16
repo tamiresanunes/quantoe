@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
-import { AppModal } from '@/components/app-modal';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
@@ -45,6 +44,7 @@ export default function CategoriesScreen() {
   const [editTarget, setEditTarget] = useState<Category | null>(null);
   const [editName, setEditName] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
+  const savingEditRef = useRef(false);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
   useEffect(() => {
@@ -100,7 +100,15 @@ export default function CategoriesScreen() {
   }
 
   async function saveEdit() {
-    if (!user || !editTarget || busy) return;
+    if (!user || !editTarget || savingEditRef.current) return;
+    const normalized = editName.trim().replace(/\s+/g, ' ');
+    if (normalized === editTarget.name) {
+      savingEditRef.current = true;
+      setEditTarget(null);
+      setEditError(null);
+      return;
+    }
+    savingEditRef.current = true;
     setBusy(true);
     setNotice(null);
     try {
@@ -116,7 +124,14 @@ export default function CategoriesScreen() {
       setEditError(null);
       setNotice({ variant: 'success', title: 'Categoria atualizada' });
     } catch (cause) {
-      setEditError(errorMessage(cause));
+      savingEditRef.current = false;
+      const message = errorMessage(cause);
+      setEditError(message);
+      setNotice({
+        variant: 'error',
+        title: 'Confira o nome',
+        message,
+      });
     } finally {
       setBusy(false);
     }
@@ -179,6 +194,19 @@ export default function CategoriesScreen() {
                   {categories.length === 1 ? 'cadastrada' : 'cadastradas'}
                 </Text>
               </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Adicionar nova categoria"
+                hitSlop={6}
+                onPress={() => router.push('/profile/categories/new')}
+                style={styles.addButton}
+              >
+                <SymbolView
+                  name={{ ios: 'plus', android: 'add', web: 'add' }}
+                  size={19}
+                  tintColor={colors.text.inverse}
+                />
+              </Pressable>
             </View>
           </View>
 
@@ -211,24 +239,6 @@ export default function CategoriesScreen() {
                 returnKeyType="search"
               />
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Adicionar nova categoria"
-              onPress={() => router.push('/profile/categories/new')}
-              style={styles.addRow}
-            >
-              <View style={styles.addInput}>
-                <Text style={styles.addPlaceholder}>Adicionar nova</Text>
-              </View>
-              <View style={styles.addButton}>
-                <SymbolView
-                  name={{ ios: 'plus', android: 'add', web: 'add' }}
-                  size={19}
-                  tintColor={colors.text.inverse}
-                />
-              </View>
-            </Pressable>
-
             {notice ? (
               <AppFeedback
                 compact
@@ -263,9 +273,7 @@ export default function CategoriesScreen() {
             {!loading && !loadError && categories.length === 0 ? (
               <EmptyState
                 title="Nenhuma categoria cadastrada"
-                message="Adicione sua primeira categoria para organizar as peças."
-                actionLabel="Adicionar categoria"
-                onAction={() => router.push('/profile/categories/new')}
+                message="Use o botão + para cadastrar sua primeira categoria."
               />
             ) : null}
             {!loading &&
@@ -284,41 +292,105 @@ export default function CategoriesScreen() {
                     key={category.id}
                     style={[styles.categoryRow, index > 0 && styles.divider]}
                   >
-                    <Text numberOfLines={1} style={styles.categoryName}>
-                      {category.name}
-                    </Text>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Editar ${category.name}`}
-                      onPress={() => {
-                        setEditTarget(category);
-                        setEditName(category.name);
-                        setEditError(null);
-                      }}
-                      style={styles.iconButton}
-                    >
-                      <SymbolView
-                        name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
-                        size={15}
-                        tintColor={colors.text.secondary}
-                      />
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Excluir ${category.name}`}
-                      onPress={() => setDeleteTarget(category)}
-                      style={styles.iconButton}
-                    >
-                      <SymbolView
-                        name={{
-                          ios: 'trash',
-                          android: 'delete',
-                          web: 'delete',
-                        }}
-                        size={15}
-                        tintColor={colors.semantic.error.foreground}
-                      />
-                    </Pressable>
+                    {editTarget?.id === category.id ? (
+                      <>
+                        <TextInput
+                          autoFocus
+                          accessibilityLabel={`Editar nome de ${category.name}`}
+                          accessibilityHint={
+                            editError ??
+                            'Toque no check ou fora do campo para salvar'
+                          }
+                          value={editName}
+                          onChangeText={(value) => {
+                            setEditName(value);
+                            setEditError(null);
+                          }}
+                          onBlur={() => void saveEdit()}
+                          onSubmitEditing={() => void saveEdit()}
+                          returnKeyType="done"
+                          maxLength={40}
+                          selectionColor={colors.action.secondary}
+                          style={[
+                            styles.categoryNameInput,
+                            editError && styles.categoryNameInputError,
+                          ]}
+                        />
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Salvar alteração em ${category.name}`}
+                          accessibilityState={{ disabled: busy }}
+                          disabled={busy}
+                          hitSlop={6}
+                          onPress={() => void saveEdit()}
+                          style={styles.iconButton}
+                        >
+                          <SymbolView
+                            name={{
+                              ios: 'checkmark',
+                              android: 'check',
+                              web: 'check',
+                            }}
+                            size={17}
+                            tintColor={colors.action.secondary}
+                          />
+                        </Pressable>
+                      </>
+                    ) : (
+                      <>
+                        <Text numberOfLines={1} style={styles.categoryName}>
+                          {category.name}
+                        </Text>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Editar ${category.name}`}
+                          accessibilityState={{
+                            disabled: busy || editTarget !== null,
+                          }}
+                          disabled={busy || editTarget !== null}
+                          hitSlop={6}
+                          onPress={() => {
+                            savingEditRef.current = false;
+                            setEditTarget(category);
+                            setEditName(category.name);
+                            setEditError(null);
+                            setNotice(null);
+                          }}
+                          style={styles.iconButton}
+                        >
+                          <SymbolView
+                            name={{
+                              ios: 'pencil',
+                              android: 'edit',
+                              web: 'edit',
+                            }}
+                            size={15}
+                            tintColor={colors.text.secondary}
+                          />
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Excluir ${category.name}`}
+                          accessibilityState={{
+                            disabled: busy || editTarget !== null,
+                          }}
+                          disabled={busy || editTarget !== null}
+                          hitSlop={6}
+                          onPress={() => setDeleteTarget(category)}
+                          style={styles.iconButton}
+                        >
+                          <SymbolView
+                            name={{
+                              ios: 'trash',
+                              android: 'delete',
+                              web: 'delete',
+                            }}
+                            size={15}
+                            tintColor={colors.semantic.error.foreground}
+                          />
+                        </Pressable>
+                      </>
+                    )}
                   </View>
                 ))}
               </View>
@@ -327,30 +399,6 @@ export default function CategoriesScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AppModal
-        visible={editTarget !== null}
-        title="Editar categoria"
-        titleStyle={styles.modalTitle}
-        onClose={() => !busy && setEditTarget(null)}
-      >
-        <TextInput
-          accessibilityLabel="Nome da categoria"
-          value={editName}
-          onChangeText={setEditName}
-          maxLength={40}
-          style={styles.modalInput}
-        />
-        {editError ? (
-          <AppFeedback
-            compact
-            variant="error"
-            title="Confira o nome"
-            message={editError}
-            onDismiss={() => setEditError(null)}
-          />
-        ) : null}
-        <AppButton title="Salvar" loading={busy} onPress={saveEdit} />
-      </AppModal>
       <ConfirmDialog
         visible={deleteTarget !== null}
         title="Excluir categoria?"
@@ -425,23 +473,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.primary,
   },
-  addRow: { flexDirection: 'row', gap: 7 },
-  addInput: {
-    flex: 1,
-    minWidth: 0,
-    height: 38,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: 14,
-    backgroundColor: colors.surface.primary,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-  },
-  addPlaceholder: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 12,
-    color: colors.text.auxiliary,
-  },
   addButton: {
     width: 38,
     height: 38,
@@ -475,6 +506,24 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.sansRegular,
     fontSize: 12,
   },
+  categoryNameInput: {
+    flex: 1,
+    minWidth: 0,
+    height: 36,
+    borderWidth: 1,
+    borderColor: colors.border.selected,
+    borderRadius: 10,
+    backgroundColor: colors.surface.selected,
+    paddingHorizontal: 9,
+    outlineWidth: 0,
+    outlineColor: 'transparent',
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 12,
+    color: colors.text.primary,
+  },
+  categoryNameInputError: {
+    borderColor: colors.semantic.error.foreground,
+  },
   iconButton: {
     width: 32,
     height: 32,
@@ -484,15 +533,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   errorArea: { gap: 10 },
-  modalTitle: { fontFamily: fontFamilies.display, fontSize: 19 },
-  modalInput: {
-    height: 43,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    color: colors.text.primary,
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 13,
-  },
 });
