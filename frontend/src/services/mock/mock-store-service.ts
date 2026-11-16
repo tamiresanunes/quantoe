@@ -164,7 +164,10 @@ export const mockStoreService: StoreService = {
           ...store,
           pieceCount:
             store.pieceCount +
-            (await readStoredPieces(ownerId, store.id)).length,
+            (await readStoredPieces(ownerId, store.id)).filter(
+              (piece) =>
+                !mockStorePieces.some((sample) => sample.id === piece.id),
+            ).length,
         })),
     );
   },
@@ -173,7 +176,11 @@ export const mockStoreService: StoreService = {
     requireStore(ownerId, storeId);
     const saved = await readStoredPieces(ownerId, storeId);
     return [
-      ...mockStorePieces.filter((piece) => piece.storeId === storeId),
+      ...mockStorePieces.filter(
+        (piece) =>
+          piece.storeId === storeId &&
+          !saved.some((override) => override.id === piece.id),
+      ),
       ...saved,
     ].map((piece) => ({ ...piece }));
   },
@@ -205,20 +212,84 @@ export const mockStoreService: StoreService = {
     }
     return { ...piece };
   },
+  async updatePiece(ownerId, storeId, pieceId, input) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    validatePiece(input);
+    const saved = await readStoredPieces(ownerId, storeId);
+    const sampleIndex = mockStorePieces.findIndex(
+      (piece) => piece.storeId === storeId && piece.id === pieceId,
+    );
+    const previous =
+      saved.find((piece) => piece.id === pieceId) ??
+      mockStorePieces[sampleIndex];
+    if (!previous || previous.storeId !== storeId)
+      throw new Error('Peça não encontrada nesta loja.');
+    const updated: StorePiece = {
+      ...previous,
+      ...input,
+      id: pieceId,
+      storeId,
+      code: previous.code ?? formatPieceCode(sampleIndex + 1),
+      name: input.name.trim(),
+    };
+    const next = saved.some((piece) => piece.id === pieceId)
+      ? saved.map((piece) => (piece.id === pieceId ? updated : piece))
+      : [...saved, updated];
+    try {
+      await AsyncStorage.setItem(
+        pieceKey(ownerId, storeId),
+        JSON.stringify(next),
+      );
+    } catch {
+      throw new Error('Não foi possível salvar as alterações da peça.');
+    }
+    return { ...updated };
+  },
   async setPiecePrice(ownerId, storeId, pieceId, salePrice) {
     await requireOwner(ownerId);
     requireStore(ownerId, storeId);
     if (!Number.isFinite(salePrice) || salePrice < 0)
       throw new Error('Informe um preço de venda válido.');
     const saved = await readStoredPieces(ownerId, storeId);
-    const target = saved.find((piece) => piece.id === pieceId);
+    const sampleIndex = mockStorePieces.findIndex(
+      (piece) => piece.storeId === storeId && piece.id === pieceId,
+    );
+    const target =
+      saved.find((piece) => piece.id === pieceId) ??
+      mockStorePieces[sampleIndex];
     if (!target) throw new Error('Peça não encontrada.');
-    const updated = { ...target, salePrice };
+    if (
+      !target.name.trim() ||
+      !target.categoryId ||
+      !target.brandId ||
+      !target.condition ||
+      !target.style ||
+      !target.status ||
+      target.acquisitionPrice === undefined ||
+      !Number.isFinite(target.acquisitionPrice) ||
+      target.acquisitionPrice < 0 ||
+      !target.quantity ||
+      !Number.isInteger(target.quantity) ||
+      target.quantity < 1 ||
+      !target.acquisitionDate ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(target.acquisitionDate)
+    )
+      throw new Error(
+        'Complete os dados obrigatórios da peça antes de precificar.',
+      );
+    const updated = {
+      ...target,
+      code: target.code ?? formatPieceCode(sampleIndex + 1),
+      salePrice,
+    };
     try {
       await AsyncStorage.setItem(
         pieceKey(ownerId, storeId),
         JSON.stringify(
-          saved.map((piece) => (piece.id === pieceId ? updated : piece)),
+          saved.some((piece) => piece.id === pieceId)
+            ? saved.map((piece) => (piece.id === pieceId ? updated : piece))
+            : [...saved, updated],
         ),
       );
     } catch {

@@ -23,12 +23,17 @@ export default function PricePieceScreen() {
   const { activePieces, setPiecePrice } = useStores();
   const { heroHeight, contentWidth, cardPadding } = useResponsiveLayout();
   const piece = activePieces.find((item) => item.id === pieceId);
-  const [price, setPrice] = useState('');
+  const [price, setPrice] = useState<string | null>(null);
+  const displayedPrice =
+    price ??
+    (piece?.salePrice !== undefined
+      ? String(piece.salePrice).replace('.', ',')
+      : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    const raw = price.trim();
+    const raw = displayedPrice.trim();
     const normalized = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(raw)
       ? raw.replace(/\./g, '').replace(',', '.')
       : raw.replace(',', '.');
@@ -44,7 +49,10 @@ export default function PricePieceScreen() {
     setError(null);
     try {
       await setPiecePrice(piece.id, amount);
-      router.replace({ pathname: '/inventory', params: { priced: '1' } });
+      router.replace({
+        pathname: '/inventory/detail',
+        params: { pieceId: piece.id, priced: '1' },
+      });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -88,7 +96,7 @@ export default function PricePieceScreen() {
               label="Preço de venda (R$)"
               placeholder="0,00"
               keyboardType="decimal-pad"
-              value={price}
+              value={displayedPrice}
               onChangeText={setPrice}
             />
             {error ? (
@@ -108,7 +116,14 @@ export default function PricePieceScreen() {
             <AppButton
               title="Voltar ao estoque"
               variant="secondary"
-              onPress={() => router.replace('/inventory')}
+              onPress={() =>
+                piece
+                  ? router.replace({
+                      pathname: '/inventory/detail',
+                      params: { pieceId: piece.id },
+                    })
+                  : router.replace('/inventory')
+              }
             />
           </View>
         </ScrollView>

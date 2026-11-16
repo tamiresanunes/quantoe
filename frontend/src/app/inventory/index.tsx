@@ -80,7 +80,18 @@ export default function InventoryScreen() {
             />
           ) : (
             activePieces.map((piece) => (
-              <View key={piece.id} style={s.piece}>
+              <Pressable
+                key={piece.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver resumo de ${piece.name}`}
+                onPress={() =>
+                  router.push({
+                    pathname: '/inventory/detail',
+                    params: { pieceId: piece.id },
+                  })
+                }
+                style={s.piece}
+              >
                 <View style={s.pieceTop}>
                   <Text style={s.pieceName}>{piece.name}</Text>
                   <Text style={s.code}>{piece.code ?? 'Peça de exemplo'}</Text>
@@ -104,7 +115,7 @@ export default function InventoryScreen() {
                     })}
                   </Text>
                 ) : null}
-              </View>
+              </Pressable>
             ))
           )}
         </View>

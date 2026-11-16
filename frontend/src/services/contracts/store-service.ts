@@ -42,6 +42,12 @@ export interface StoreService {
     storeId: ID,
     input: CreatePieceInput,
   ): Promise<StorePiece>;
+  updatePiece(
+    ownerId: ID,
+    storeId: ID,
+    pieceId: ID,
+    input: CreatePieceInput,
+  ): Promise<StorePiece>;
   setPiecePrice(
     ownerId: ID,
     storeId: ID,
