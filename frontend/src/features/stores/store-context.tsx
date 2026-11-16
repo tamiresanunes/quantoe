@@ -8,7 +8,10 @@ import {
 
 import { useAuth } from '@/features/auth/auth-context';
 import { storeService } from '@/services';
-import type { CreateStoreInput } from '@/services/contracts/store-service';
+import type {
+  CreatePieceInput,
+  CreateStoreInput,
+} from '@/services/contracts/store-service';
 import type { Store, StorePiece } from '@/types/models';
 
 type StoreDetails = Omit<CreateStoreInput, 'ownerId'>;
@@ -30,6 +33,8 @@ type StoreContextValue = {
   updateStore(storeId: string, input: StoreDetails): Promise<Store>;
   removeStore(storeId: string): Promise<void>;
   activateStore(storeId: string): Promise<void>;
+  createPiece(input: CreatePieceInput): Promise<StorePiece>;
+  setPiecePrice(pieceId: string, salePrice: number): Promise<StorePiece>;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -109,6 +114,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await storeService.setActive(id, storeId);
     await load(id);
   }
+  async function createPiece(input: CreatePieceInput) {
+    const id = ownerId();
+    const storeId = stores.find((store) => store.isActive)?.id;
+    if (!storeId)
+      throw new Error('Selecione uma loja antes de cadastrar a peça.');
+    const created = await storeService.createPiece(id, storeId, input);
+    await load(id);
+    return created;
+  }
+  async function setPiecePrice(pieceId: string, salePrice: number) {
+    const id = ownerId();
+    const storeId = stores.find((store) => store.isActive)?.id;
+    if (!storeId) throw new Error('Selecione uma loja antes de precificar.');
+    const updated = await storeService.setPiecePrice(
+      id,
+      storeId,
+      pieceId,
+      salePrice,
+    );
+    await load(id);
+    return updated;
+  }
 
   const current = snapshot?.ownerId === user?.id ? snapshot : null;
   const stores = current?.stores ?? [];
@@ -127,6 +154,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updateStore,
         removeStore,
         activateStore,
+        createPiece,
+        setPiecePrice,
       }}
     >
       {children}
