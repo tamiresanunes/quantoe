@@ -13,4 +13,7 @@ export type Brand = {
   name: string;
   tier: BrandTier;
   isSystem: boolean;
+  minValue?: number;
+  maxValue?: number;
+  country?: string;
 };

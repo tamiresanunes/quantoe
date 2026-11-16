@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -15,17 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
-import { AppModal } from '@/components/app-modal';
-import { AppTextField } from '@/components/app-text-field';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
-import {
-  brandTiers,
-  type Brand,
-  type BrandTier,
-} from '@/features/brands/brand-types';
+import { brandTiers, type Brand } from '@/features/brands/brand-types';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
@@ -45,18 +39,21 @@ function searchKey(value: string) {
 }
 
 export default function BrandsScreen() {
+  const { saved } = useLocalSearchParams<{ saved?: string }>();
   const { user } = useAuth();
   const { compact, heroHeight, contentWidth } = useResponsiveLayout();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(
+    saved === 'created'
+      ? { variant: 'success', title: 'Marca cadastrada' }
+      : saved === 'updated'
+        ? { variant: 'success', title: 'Marca atualizada' }
+        : null,
+  );
   const [query, setQuery] = useState('');
-  const [formTarget, setFormTarget] = useState<Brand | 'new' | null>(null);
-  const [formName, setFormName] = useState('');
-  const [formTier, setFormTier] = useState<BrandTier>('other');
-  const [formError, setFormError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Brand | null>(null);
 
   useEffect(() => {
@@ -97,13 +94,6 @@ export default function BrandsScreen() {
       .filter((tier) => tier.brands.length > 0);
   }, [brands, query]);
 
-  function openForm(target: Brand | 'new') {
-    setFormTarget(target);
-    setFormName(target === 'new' ? '' : target.name);
-    setFormTier(target === 'new' ? 'other' : target.tier);
-    setFormError(null);
-  }
-
   async function retry() {
     if (!user || busy) return;
     setBusy(true);
@@ -112,41 +102,6 @@ export default function BrandsScreen() {
       setLoadError(null);
     } catch (cause) {
       setLoadError(errorMessage(cause));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function saveBrand() {
-    if (!user || !formTarget || busy) return;
-    if (!formName.trim()) {
-      setFormError('Informe o nome da marca.');
-      return;
-    }
-    setBusy(true);
-    setFormError(null);
-    try {
-      if (formTarget === 'new') {
-        const created = await mockBrandService.create(user.id, {
-          name: formName,
-          tier: formTier,
-        });
-        setBrands((current) => [...current, created]);
-        setNotice({ variant: 'success', title: 'Marca cadastrada' });
-      } else {
-        const updated = await mockBrandService.update(user.id, formTarget.id, {
-          name: formName,
-          tier: formTier,
-        });
-        setBrands((current) =>
-          current.map((brand) => (brand.id === updated.id ? updated : brand)),
-        );
-        setNotice({ variant: 'success', title: 'Marca atualizada' });
-      }
-      setFormTarget(null);
-      setQuery('');
-    } catch (cause) {
-      setFormError(errorMessage(cause));
     } finally {
       setBusy(false);
     }
@@ -214,6 +169,19 @@ export default function BrandsScreen() {
                   {brands.length === 1 ? 'cadastrada' : 'cadastradas'}
                 </Text>
               </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Adicionar nova marca"
+                hitSlop={6}
+                onPress={() => router.push('/profile/brands/new')}
+                style={styles.addButton}
+              >
+                <SymbolView
+                  name={{ ios: 'plus', android: 'add', web: 'add' }}
+                  size={19}
+                  tintColor={colors.text.inverse}
+                />
+              </Pressable>
             </View>
           </View>
 
@@ -246,32 +214,16 @@ export default function BrandsScreen() {
                 returnKeyType="search"
               />
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Adicionar nova marca"
-              hitSlop={3}
-              onPress={() => openForm('new')}
-              style={styles.addRow}
-            >
-              <View style={styles.addInput}>
-                <Text style={styles.addPlaceholder}>Adicionar nova</Text>
-              </View>
-              <View style={styles.addButton}>
-                <SymbolView
-                  name={{ ios: 'plus', android: 'add', web: 'add' }}
-                  size={19}
-                  tintColor={colors.text.inverse}
-                />
-              </View>
-            </Pressable>
-
             {notice ? (
               <AppFeedback
                 compact
                 variant={notice.variant}
                 title={notice.title}
                 message={notice.message}
-                onDismiss={() => setNotice(null)}
+                onDismiss={() => {
+                  setNotice(null);
+                  if (saved) router.setParams({ saved: '' });
+                }}
               />
             ) : null}
             {loading ? <LoadingState message="Carregando marcas..." /> : null}
@@ -341,7 +293,12 @@ export default function BrandsScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={`Editar ${brand.name}`}
                                 hitSlop={6}
-                                onPress={() => openForm(brand)}
+                                onPress={() =>
+                                  router.push({
+                                    pathname: '/profile/brands/new',
+                                    params: { editId: brand.id },
+                                  })
+                                }
                                 style={styles.iconButton}
                               >
                                 <SymbolView
@@ -383,68 +340,6 @@ export default function BrandsScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AppModal
-        visible={formTarget !== null}
-        title={formTarget === 'new' ? 'Nova marca' : 'Editar marca'}
-        titleStyle={styles.modalTitle}
-        onClose={() => !busy && setFormTarget(null)}
-      >
-        <AppTextField
-          label="Nome da marca"
-          placeholder="Ex.: Marca do brechó"
-          value={formName}
-          onChangeText={(value) => {
-            setFormName(value);
-            setFormError(null);
-          }}
-          maxLength={50}
-          error={formError ?? undefined}
-        />
-        <View style={styles.tierSection}>
-          <Text style={styles.tierLabel}>Setor</Text>
-          <View style={styles.tierChoices}>
-            {brandTiers.map((tier) => (
-              <Pressable
-                key={tier.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${tier.label}, mais ${tier.points} pontos`}
-                accessibilityState={{ selected: formTier === tier.id }}
-                onPress={() => setFormTier(tier.id)}
-                style={[
-                  styles.tierChoice,
-                  formTier === tier.id && styles.tierChoiceSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tierChoiceText,
-                    formTier === tier.id && styles.tierChoiceTextSelected,
-                  ]}
-                >
-                  {tier.label} · +{tier.points}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-        <View style={styles.modalActions}>
-          <AppButton
-            title="Cancelar"
-            variant="secondary"
-            size="small"
-            disabled={busy}
-            onPress={() => setFormTarget(null)}
-            style={styles.modalAction}
-          />
-          <AppButton
-            title="Salvar"
-            size="small"
-            loading={busy}
-            onPress={saveBrand}
-            style={styles.modalAction}
-          />
-        </View>
-      </AppModal>
       <ConfirmDialog
         visible={deleteTarget !== null}
         title="Excluir marca?"
@@ -515,23 +410,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.primary,
   },
-  addRow: { flexDirection: 'row', gap: 7 },
-  addInput: {
-    flex: 1,
-    minWidth: 0,
-    height: 38,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: 14,
-    backgroundColor: colors.surface.primary,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-  },
-  addPlaceholder: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 12,
-    color: colors.text.auxiliary,
-  },
   addButton: {
     width: 38,
     height: 38,
@@ -600,32 +478,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   errorArea: { gap: 10 },
-  modalTitle: { fontFamily: fontFamilies.display, fontSize: 19 },
-  tierSection: { gap: 8 },
-  tierLabel: {
-    color: colors.text.primary,
-    fontFamily: fontFamilies.sansMedium,
-    fontSize: 11,
-  },
-  tierChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  tierChoice: {
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: 14,
-    paddingHorizontal: 9,
-    minHeight: 31,
-    justifyContent: 'center',
-  },
-  tierChoiceSelected: {
-    borderColor: colors.action.secondary,
-    backgroundColor: colors.surface.selected,
-  },
-  tierChoiceText: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 10,
-    color: colors.text.secondary,
-  },
-  tierChoiceTextSelected: { color: colors.action.secondary },
-  modalActions: { flexDirection: 'row', gap: 8 },
-  modalAction: { flex: 1 },
 });

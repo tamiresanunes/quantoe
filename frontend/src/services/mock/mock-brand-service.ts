@@ -8,7 +8,13 @@ import {
 import { systemBrands } from '@/mocks/fixtures/brands';
 import { mockAuthService } from '@/services/mock/mock-auth-service';
 
-export type BrandInput = { name: string; tier: BrandTier };
+export type BrandInput = {
+  name: string;
+  tier: BrandTier;
+  minValue: number;
+  maxValue: number;
+  country: string;
+};
 
 function storageKey(ownerId: string) {
   return `@quantoe/brands/v1/${encodeURIComponent(ownerId)}`;
@@ -29,7 +35,16 @@ function validCustomBrands(value: unknown): value is Brand[] {
         typeof item.name === 'string' &&
         item.name.trim().length > 0 &&
         item.isSystem === false &&
-        brandTiers.some((tier) => tier.id === item.tier),
+        brandTiers.some((tier) => tier.id === item.tier) &&
+        (item.minValue === undefined ||
+          (typeof item.minValue === 'number' &&
+            Number.isFinite(item.minValue) &&
+            item.minValue >= 0)) &&
+        (item.maxValue === undefined ||
+          (typeof item.maxValue === 'number' &&
+            Number.isFinite(item.maxValue) &&
+            item.maxValue >= 0)) &&
+        (item.country === undefined || typeof item.country === 'string'),
     )
   );
 }
@@ -80,6 +95,18 @@ function validatedInput(
   if (!brandTiers.some((tier) => tier.id === input.tier)) {
     throw new Error('Selecione um setor válido.');
   }
+  if (
+    !Number.isFinite(input.minValue) ||
+    !Number.isFinite(input.maxValue) ||
+    input.minValue < 0 ||
+    input.maxValue < input.minValue ||
+    input.maxValue > 1_000_000_000
+  ) {
+    throw new Error('Confira a faixa de valorização da marca.');
+  }
+  const country = input.country.trim().replace(/\s+/g, ' ');
+  if (!country) throw new Error('Informe o país de origem.');
+  if (country.length > 60) throw new Error('Use até 60 caracteres no país.');
   const target = normalizedName(name);
   if (
     [...systemBrands, ...custom].some(
@@ -89,7 +116,13 @@ function validatedInput(
   ) {
     throw new Error('Esta marca já está cadastrada.');
   }
-  return { name, tier: input.tier };
+  return {
+    name,
+    tier: input.tier,
+    minValue: input.minValue,
+    maxValue: input.maxValue,
+    country,
+  };
 }
 
 export const mockBrandService = {
