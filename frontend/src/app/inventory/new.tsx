@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -97,8 +97,18 @@ function parseMoney(value: string) {
 }
 
 export default function NewPieceScreen() {
+  const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { user } = useAuth();
-  const { activeStore, createPiece, loading: storesLoading } = useStores();
+  const {
+    activeStore,
+    activePieces,
+    createPiece,
+    updatePiece,
+    loading: storesLoading,
+  } = useStores();
+  const editingPiece = editId
+    ? activePieces.find((item) => item.id === editId)
+    : undefined;
   const { heroHeight, contentWidth, cardPadding } = useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -122,7 +132,7 @@ export default function NewPieceScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const draftKey =
-    user && activeStore ? pieceDraftKey(user.id, activeStore.id) : null;
+    user && activeStore ? pieceDraftKey(user.id, activeStore.id, editId) : null;
   const [readyDraftKey, setReadyDraftKey] = useState<string | null>(null);
   const pendingDraftWrites = useRef<Promise<void>>(Promise.resolve());
   const savedRef = useRef(false);
@@ -134,20 +144,33 @@ export default function NewPieceScreen() {
     readPieceDraft(draftKey)
       .then((draft) => {
         if (!live) return;
-        setPhotoUri(draft?.photoUri ?? null);
-        setName(draft?.name ?? '');
-        setSize(draft?.size ?? '');
-        setCategoryId(draft?.categoryId ?? '');
-        setBrandId(draft?.brandId ?? defaultBrandId);
-        setCondition(draft?.condition ?? 'excellent');
-        setStyle(draft?.style ?? 'casual');
-        setAcquisitionPrice(draft?.acquisitionPrice ?? '');
-        setQuantity(draft?.quantity ?? '1');
-        setAcquisitionPlace(draft?.acquisitionPlace ?? '');
-        setAcquisitionDate(draft?.acquisitionDate ?? todayPtBr());
-        setCollection(draft?.collection ?? '');
-        setNotes(draft?.notes ?? '');
-        setStatus(draft?.status ?? 'available');
+        const previous = editId ? editingPiece : undefined;
+        setPhotoUri(draft?.photoUri ?? previous?.photoUri ?? null);
+        setName(draft?.name ?? previous?.name ?? '');
+        setSize(draft?.size ?? previous?.size ?? '');
+        setCategoryId(draft?.categoryId ?? previous?.categoryId ?? '');
+        setBrandId(draft?.brandId ?? previous?.brandId ?? defaultBrandId);
+        setCondition(draft?.condition ?? previous?.condition ?? 'excellent');
+        setStyle(draft?.style ?? previous?.style ?? 'casual');
+        setAcquisitionPrice(
+          draft?.acquisitionPrice ??
+            (previous?.acquisitionPrice !== undefined
+              ? String(previous.acquisitionPrice).replace('.', ',')
+              : ''),
+        );
+        setQuantity(draft?.quantity ?? String(previous?.quantity ?? 1));
+        setAcquisitionPlace(
+          draft?.acquisitionPlace ?? previous?.acquisitionPlace ?? '',
+        );
+        setAcquisitionDate(
+          draft?.acquisitionDate ??
+            (previous?.acquisitionDate
+              ? previous.acquisitionDate.split('-').reverse().join('/')
+              : todayPtBr()),
+        );
+        setCollection(draft?.collection ?? previous?.collection ?? '');
+        setNotes(draft?.notes ?? previous?.notes ?? '');
+        setStatus(draft?.status ?? previous?.status ?? 'available');
         setSubmitted(false);
         setReadyDraftKey(draftKey);
       })
@@ -160,7 +183,7 @@ export default function NewPieceScreen() {
     return () => {
       live = false;
     };
-  }, [draftKey]);
+  }, [draftKey, editId, editingPiece]);
 
   useEffect(() => {
     if (!draftKey || readyDraftKey !== draftKey || savedRef.current) return;
@@ -218,7 +241,7 @@ export default function NewPieceScreen() {
           if (!live) return;
           setCategories(nextCategories);
           setBrands(nextBrands);
-          setCode(nextCode);
+          setCode(editId ? (editingPiece?.code ?? 'Ao salvar') : nextCode);
           setBrandId(
             (current) =>
               current ||
@@ -237,7 +260,7 @@ export default function NewPieceScreen() {
       return () => {
         live = false;
       };
-    }, [user]),
+    }, [user, editId, editingPiece?.code]),
   );
 
   async function pickPhoto(source: 'camera' | 'library') {
@@ -303,7 +326,7 @@ export default function NewPieceScreen() {
       return;
     setSaving(true);
     try {
-      const piece = await createPiece({
+      const input = {
         name: name.trim(),
         photoUri,
         size: size.trim(),
@@ -318,7 +341,10 @@ export default function NewPieceScreen() {
         collection: collection.trim(),
         notes: notes.trim(),
         status,
-      });
+      };
+      const piece = editId
+        ? await updatePiece(editId, input)
+        : await createPiece(input);
       savedRef.current = true;
       await pendingDraftWrites.current.catch(() => undefined);
       if (draftKey) await removePieceDraft(draftKey).catch(() => undefined);
@@ -329,8 +355,8 @@ export default function NewPieceScreen() {
         });
       else
         router.replace({
-          pathname: '/inventory',
-          params: { created: '1' },
+          pathname: '/inventory/detail',
+          params: { pieceId: piece.id, saved: editId ? 'updated' : 'created' },
         });
     } catch (cause) {
       setError(
@@ -390,7 +416,14 @@ export default function NewPieceScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Voltar ao estoque"
-                onPress={() => router.replace('/inventory')}
+                onPress={() =>
+                  editId
+                    ? router.replace({
+                        pathname: '/inventory/detail',
+                        params: { pieceId: editId },
+                      })
+                    : router.replace('/inventory')
+                }
                 style={s.back}
               >
                 <SymbolView
@@ -405,7 +438,7 @@ export default function NewPieceScreen() {
               </Pressable>
               <View>
                 <Text accessibilityRole="header" style={s.title}>
-                  Nova peça
+                  {editId ? 'Editar peça' : 'Nova peça'}
                 </Text>
                 {activeStore ? (
                   <Text style={s.storeName}>Loja: {activeStore.name}</Text>
@@ -425,6 +458,13 @@ export default function NewPieceScreen() {
                 onAction={() => router.replace('/stores')}
               />
             )
+          ) : editId && !editingPiece ? (
+            <EmptyState
+              title="Peça não encontrada"
+              message="Esta peça não pertence à loja ativa."
+              actionLabel="Voltar ao estoque"
+              onAction={() => router.replace('/inventory')}
+            />
           ) : readyDraftKey !== draftKey ? (
             <LoadingState message="Carregando rascunho..." />
           ) : (
@@ -784,12 +824,14 @@ export default function NewPieceScreen() {
                   />
                 ) : null}
                 <AppButton
-                  title="Cadastrar peça"
+                  title={editId ? 'Salvar alterações' : 'Cadastrar peça'}
                   onPress={() => save(false)}
                   loading={saving}
                 />
                 <AppButton
-                  title="Cadastrar e precificar"
+                  title={
+                    editId ? 'Salvar e precificar' : 'Cadastrar e precificar'
+                  }
                   onPress={() => save(true)}
                   variant="secondary"
                   disabled={saving}

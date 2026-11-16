@@ -19,8 +19,13 @@ export type PieceDraft = {
   status: PieceStatus;
 };
 
-export function pieceDraftKey(ownerId: string, storeId: string) {
-  return `@quantoe/piece-draft/v1/${encodeURIComponent(ownerId)}/${encodeURIComponent(storeId)}`;
+export function pieceDraftKey(
+  ownerId: string,
+  storeId: string,
+  pieceId?: string,
+) {
+  const base = `@quantoe/piece-draft/v1/${encodeURIComponent(ownerId)}/${encodeURIComponent(storeId)}`;
+  return pieceId ? `${base}/edit/${encodeURIComponent(pieceId)}` : base;
 }
 
 function isPieceDraft(value: unknown): value is PieceDraft {

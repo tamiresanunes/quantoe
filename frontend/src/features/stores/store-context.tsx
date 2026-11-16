@@ -34,6 +34,7 @@ type StoreContextValue = {
   removeStore(storeId: string): Promise<void>;
   activateStore(storeId: string): Promise<void>;
   createPiece(input: CreatePieceInput): Promise<StorePiece>;
+  updatePiece(pieceId: string, input: CreatePieceInput): Promise<StorePiece>;
   setPiecePrice(pieceId: string, salePrice: number): Promise<StorePiece>;
 };
 
@@ -123,6 +124,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await load(id);
     return created;
   }
+  async function updatePiece(pieceId: string, input: CreatePieceInput) {
+    const id = ownerId();
+    const storeId = stores.find((store) => store.isActive)?.id;
+    if (!storeId) throw new Error('Selecione uma loja antes de editar a peça.');
+    const updated = await storeService.updatePiece(id, storeId, pieceId, input);
+    await load(id);
+    return updated;
+  }
   async function setPiecePrice(pieceId: string, salePrice: number) {
     const id = ownerId();
     const storeId = stores.find((store) => store.isActive)?.id;
@@ -155,6 +164,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         removeStore,
         activateStore,
         createPiece,
+        updatePiece,
         setPiecePrice,
       }}
     >
