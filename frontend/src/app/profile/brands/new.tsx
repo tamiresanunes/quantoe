@@ -47,7 +47,12 @@ function formatCurrency(value: number | undefined) {
 }
 
 export default function BrandFormScreen() {
-  const { editId } = useLocalSearchParams<{ editId?: string }>();
+  const { editId, fromPiece } = useLocalSearchParams<{
+    editId?: string;
+    fromPiece?: string;
+  }>();
+  const goBack = () =>
+    fromPiece === '1' ? router.back() : router.replace('/profile/brands');
   const { user } = useAuth();
   const { compact, heroHeight, contentWidth, cardPadding } =
     useResponsiveLayout();
@@ -131,10 +136,12 @@ export default function BrandFormScreen() {
       } else {
         await mockBrandService.create(user.id, input);
       }
-      router.replace({
-        pathname: '/profile/brands',
-        params: { saved: editingBrand ? 'updated' : 'created' },
-      });
+      if (fromPiece === '1') router.back();
+      else
+        router.replace({
+          pathname: '/profile/brands',
+          params: { saved: editingBrand ? 'updated' : 'created' },
+        });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Tente novamente.');
     } finally {
@@ -159,7 +166,7 @@ export default function BrandFormScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Voltar para marcas"
                 hitSlop={6}
-                onPress={() => router.replace('/profile/brands')}
+                onPress={goBack}
                 style={styles.backButton}
               >
                 <SymbolView
@@ -205,7 +212,7 @@ export default function BrandFormScreen() {
                 <AppButton
                   title="Voltar para marcas"
                   variant="secondary"
-                  onPress={() => router.replace('/profile/brands')}
+                  onPress={goBack}
                 />
               </>
             ) : null}
@@ -343,7 +350,7 @@ export default function BrandFormScreen() {
                     title="Cancelar"
                     variant="secondary"
                     disabled={saving}
-                    onPress={() => router.replace('/profile/brands')}
+                    onPress={goBack}
                   />
                 </View>
               </>

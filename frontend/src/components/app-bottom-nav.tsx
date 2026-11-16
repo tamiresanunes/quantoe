@@ -6,7 +6,7 @@ import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
-type AppBottomNavProps = { active: 'home' | 'profile' };
+type AppBottomNavProps = { active: 'home' | 'inventory' | 'profile' };
 
 export function AppBottomNav({ active }: AppBottomNavProps) {
   const { compact } = useResponsiveLayout();
@@ -33,10 +33,12 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
           Início
         </Text>
       </Pressable>
-      <View
+      <Pressable
+        accessibilityRole="tab"
+        accessibilityLabel="Estoque"
+        accessibilityState={{ selected: active === 'inventory' }}
+        onPress={() => router.replace('/inventory/index')}
         style={styles.item}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
       >
         <SymbolView
           name={{
@@ -45,10 +47,18 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
             web: 'inventory_2',
           }}
           size={19}
-          tintColor={colors.border.default}
+          tintColor={
+            active === 'inventory'
+              ? colors.surface.selected
+              : colors.border.default
+          }
         />
-        <Text style={styles.label}>Estoque</Text>
-      </View>
+        <Text
+          style={[styles.label, active === 'inventory' && styles.activeLabel]}
+        >
+          Estoque
+        </Text>
+      </Pressable>
       <View
         style={styles.item}
         accessibilityElementsHidden

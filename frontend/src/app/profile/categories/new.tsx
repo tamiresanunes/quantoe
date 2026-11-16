@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import {
@@ -30,6 +30,9 @@ import { fontFamilies } from '@/theme/typography';
 import type { CategoryIcon } from '@/types/models';
 
 export default function NewCategoryScreen() {
+  const { fromPiece } = useLocalSearchParams<{ fromPiece?: string }>();
+  const goBack = () =>
+    fromPiece === '1' ? router.back() : router.replace('/profile/categories');
   const { user } = useAuth();
   const { compact, heroHeight, contentWidth, cardPadding } =
     useResponsiveLayout();
@@ -65,10 +68,12 @@ export default function NewCategoryScreen() {
         minimumStock: Number(minimumStock.trim()),
         description,
       });
-      router.replace({
-        pathname: '/profile/categories',
-        params: { created: '1' },
-      });
+      if (fromPiece === '1') router.back();
+      else
+        router.replace({
+          pathname: '/profile/categories',
+          params: { created: '1' },
+        });
     } catch (cause) {
       if (cause instanceof CategoryNameError) {
         setNameError(cause.message);
@@ -96,7 +101,7 @@ export default function NewCategoryScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Voltar para categorias"
-                onPress={() => router.replace('/profile/categories')}
+                onPress={goBack}
                 style={styles.backButton}
               >
                 <SymbolView
@@ -276,7 +281,7 @@ export default function NewCategoryScreen() {
                 title="Cancelar"
                 variant="secondary"
                 disabled={saving}
-                onPress={() => router.replace('/profile/categories')}
+                onPress={goBack}
               />
             </View>
           </View>

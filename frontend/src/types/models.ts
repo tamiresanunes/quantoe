@@ -23,7 +23,26 @@ export interface StorePiece {
   storeId: ID;
   categoryId: ID;
   name: string;
+  code?: string;
+  photoUri?: string | null;
+  size?: string;
+  brandId?: ID;
+  condition?: PieceCondition;
+  style?: PieceStyle;
+  acquisitionPrice?: number;
+  quantity?: number;
+  acquisitionPlace?: string;
+  acquisitionDate?: string;
+  collection?: string;
+  notes?: string;
+  status?: PieceStatus;
+  salePrice?: number;
 }
+
+export type PieceCondition = 'new' | 'excellent' | 'good' | 'fair' | 'worn';
+export type PieceStyle =
+  'casual' | 'social' | 'vintage' | 'beach' | 'winter' | 'other';
+export type PieceStatus = 'available' | 'reserved' | 'clearance' | 'sold';
 
 export interface Category {
   id: ID;

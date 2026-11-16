@@ -5,7 +5,6 @@ import {
   categoryIcons,
 } from '@/features/categories/category-options';
 import { mockCategories } from '@/mocks/fixtures/categories';
-import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { mockAuthService } from '@/services/mock/mock-auth-service';
 import { mockStoreService } from '@/services/mock/mock-store-service';
 import type { Category, CategoryIcon } from '@/types/models';
@@ -163,13 +162,15 @@ export const mockCategoryService = {
     if (!categories.some((item) => item.id === categoryId)) {
       throw new Error('Categoria não encontrada.');
     }
-    const ownerStoreIds = new Set(
-      (await mockStoreService.listByOwner(ownerId)).map((store) => store.id),
+    const ownerStores = await mockStoreService.listByOwner(ownerId);
+    const piecesByStore = await Promise.all(
+      ownerStores.map((store) =>
+        mockStoreService.listPieces(ownerId, store.id),
+      ),
     );
     if (
-      mockStorePieces.some(
-        (piece) =>
-          piece.categoryId === categoryId && ownerStoreIds.has(piece.storeId),
+      piecesByStore.some((pieces) =>
+        pieces.some((piece) => piece.categoryId === categoryId),
       )
     ) {
       throw new Error(
