@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mockStores } from '@/mocks/fixtures/stores';
 import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { citiesByState, states } from '@/features/stores/brazil-locations';
+import { pieceDraftKey } from '@/features/inventory/piece-draft';
 import {
   defaultStockPreferences,
   isValidStockPreferences,
@@ -79,15 +80,50 @@ function formatPieceCode(sequence: number) {
 }
 
 function validatePiece(input: CreatePieceInput) {
-  if (!input.name.trim()) throw new Error('Informe o nome da peça.');
+  if (!input.name.trim() || input.name.trim().length > 80)
+    throw new Error('Informe o nome da peça com até 80 caracteres.');
   if (!input.categoryId) throw new Error('Selecione uma categoria.');
   if (!input.brandId) throw new Error('Selecione uma marca.');
-  if (!Number.isFinite(input.acquisitionPrice) || input.acquisitionPrice < 0)
+  if (!['new', 'excellent', 'good', 'fair', 'worn'].includes(input.condition))
+    throw new Error('Selecione um estado de conservação válido.');
+  if (
+    !['casual', 'social', 'vintage', 'beach', 'winter', 'other'].includes(
+      input.style,
+    )
+  )
+    throw new Error('Selecione um estilo válido.');
+  if (!['available', 'reserved', 'clearance', 'sold'].includes(input.status))
+    throw new Error('Selecione um status válido.');
+  if (
+    !Number.isFinite(input.acquisitionPrice) ||
+    input.acquisitionPrice < 0 ||
+    input.acquisitionPrice > 1_000_000_000
+  )
     throw new Error('Informe um preço de aquisição válido.');
-  if (!Number.isInteger(input.quantity) || input.quantity < 1)
+  if (
+    !Number.isInteger(input.quantity) ||
+    input.quantity < 1 ||
+    input.quantity > 999_999
+  )
     throw new Error('Informe uma quantidade válida.');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.acquisitionDate))
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.acquisitionDate);
+  const date =
+    match && new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (
+    !match ||
+    !date ||
+    date.getFullYear() !== Number(match[1]) ||
+    date.getMonth() + 1 !== Number(match[2]) ||
+    date.getDate() !== Number(match[3])
+  )
     throw new Error('Informe uma data de aquisição válida.');
+  if (
+    input.size.length > 20 ||
+    input.acquisitionPlace.length > 100 ||
+    input.collection.length > 80 ||
+    input.notes.length > 500
+  )
+    throw new Error('Confira o tamanho dos campos da peça.');
 }
 
 function clonePreferences(preferences: StockPreferences): StockPreferences {
@@ -223,6 +259,7 @@ export const mockStoreService: StoreService = {
     const store = requireStore(ownerId, storeId);
     await AsyncStorage.removeItem(preferenceKey(ownerId, storeId));
     await AsyncStorage.removeItem(pieceKey(ownerId, storeId));
+    await AsyncStorage.removeItem(pieceDraftKey(ownerId, storeId));
     const index = stores.indexOf(store);
     stores.splice(index, 1);
     if (store.isActive) {

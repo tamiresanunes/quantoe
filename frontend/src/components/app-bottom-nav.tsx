@@ -37,7 +37,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityRole="tab"
         accessibilityLabel="Estoque"
         accessibilityState={{ selected: active === 'inventory' }}
-        onPress={() => router.replace('/inventory/index')}
+        onPress={() => router.replace('/inventory')}
         style={styles.item}
       >
         <SymbolView

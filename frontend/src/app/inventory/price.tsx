@@ -44,7 +44,7 @@ export default function PricePieceScreen() {
     setError(null);
     try {
       await setPiecePrice(piece.id, amount);
-      router.replace({ pathname: '/inventory/index', params: { priced: '1' } });
+      router.replace({ pathname: '/inventory', params: { priced: '1' } });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -108,7 +108,7 @@ export default function PricePieceScreen() {
             <AppButton
               title="Voltar ao estoque"
               variant="secondary"
-              onPress={() => router.replace('/inventory/index')}
+              onPress={() => router.replace('/inventory')}
             />
           </View>
         </ScrollView>
