@@ -157,7 +157,7 @@ export default function ProfileScreen() {
               {
                 label: 'Marcas',
                 icon: { ios: 'tag', android: 'sell', web: 'sell' },
-                action: () => setOpenSection('Marcas'),
+                action: () => router.push('/profile/brands'),
               },
             ]}
           />
