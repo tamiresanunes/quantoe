@@ -239,7 +239,10 @@ export const mockStoreService: StoreService = {
       categoryId: '',
       name: name.trim(),
       code: formatPieceCode(sequence),
-      ...input,
+      brandId: input.brandId,
+      condition: input.condition,
+      style: input.style,
+      acquisitionPrice: input.acquisitionPrice,
     };
     try {
       await AsyncStorage.setItem(sequenceKey(ownerId), String(sequence));

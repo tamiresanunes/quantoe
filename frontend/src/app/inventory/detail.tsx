@@ -328,7 +328,7 @@ export default function PieceDetailScreen() {
                   </Text>
                   <Text style={s.missingText}>{missing.join(' · ')}</Text>
                   <Text style={s.missingHint}>
-                    Toque no lápis para corrigir antes de precificar.
+                    Toque no lápis para completar o cadastro da peça.
                   </Text>
                 </View>
               ) : null}
@@ -346,7 +346,7 @@ export default function PieceDetailScreen() {
                 />
                 <AppButton
                   title="Precificar"
-                  disabled={missing.length > 0 || !optionsReady}
+                  disabled={!optionsReady}
                   onPress={() =>
                     router.push({
                       pathname: '/inventory/price',

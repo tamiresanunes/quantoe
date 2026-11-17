@@ -33,9 +33,6 @@ import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 import type { PieceCondition, PieceStyle, StorePiece } from '@/types/models';
 
-const currency = (value: number) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
 function parseMoney(value: string) {
   const raw = value.trim().replace(/\s|R\$/g, '');
   const normalized = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(raw)
@@ -46,13 +43,10 @@ function parseMoney(value: string) {
   return Number.isFinite(amount) ? amount : null;
 }
 
-type Result = ReturnType<typeof calculatePricing> & { pieceId: string };
-
 export default function PricePieceScreen() {
   const { pieceId } = useLocalSearchParams<{ pieceId?: string }>();
   const { user } = useAuth();
-  const { activeStore, activePieces, createQuickPiece, pricePiece } =
-    useStores();
+  const { activeStore, activePieces, createQuickPiece } = useStores();
   const { contentWidth } = useResponsiveLayout();
   const [mode, setMode] = useState<'stock' | 'quick'>('stock');
   const [selectedId, setSelectedId] = useState(pieceId ?? '');
@@ -63,8 +57,6 @@ export default function PricePieceScreen() {
   const [condition, setCondition] = useState<PieceCondition>('excellent');
   const [style, setStyle] = useState<PieceStyle>('social');
   const [acquisitionPrice, setAcquisitionPrice] = useState('');
-  const [salePrice, setSalePrice] = useState('');
-  const [result, setResult] = useState<Result | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const initialPiece = useRef<string | null>(null);
@@ -109,12 +101,6 @@ export default function PricePieceScreen() {
         ? ''
         : String(piece.acquisitionPrice).replace('.', ','),
     );
-    setSalePrice(
-      piece.salePrice === undefined
-        ? ''
-        : String(piece.salePrice).replace('.', ','),
-    );
-    setResult(null);
     setError(null);
   }
 
@@ -127,14 +113,12 @@ export default function PricePieceScreen() {
       return;
     }
     setMode(next);
-    setResult(null);
     setError(null);
     if (next === 'quick') {
       setBrandId('');
       setCondition('excellent');
       setStyle('social');
       setAcquisitionPrice('');
-      setSalePrice('');
     }
   }
 
@@ -165,50 +149,31 @@ export default function PricePieceScreen() {
     try {
       let pricedPieceId = selectedId;
       if (mode === 'quick') {
-        const piece = quickId
-          ? await pricePiece(quickId, input)
-          : await createQuickPiece(name.trim(), input);
-        setQuickId(piece.id);
-        pricedPieceId = piece.id;
+        if (quickId) pricedPieceId = quickId;
+        else {
+          const piece = await createQuickPiece(name.trim(), input);
+          setQuickId(piece.id);
+          pricedPieceId = piece.id;
+        }
       }
-      setSalePrice(pricing.suggestedPrice.toFixed(2).replace('.', ','));
-      setResult({ ...pricing, pieceId: pricedPieceId });
+      router.push({
+        pathname: '/inventory/suggestion',
+        params: {
+          pieceId: pricedPieceId,
+          mode,
+          brandId,
+          brandName: brand.name,
+          condition,
+          style,
+          acquisitionPrice: String(cost),
+          suggestedPrice: String(pricing.suggestedPrice),
+        },
+      });
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
           : 'Não foi possível precificar a peça.',
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function saveFinalPrice() {
-    if (!result) return;
-    const amount = parseMoney(salePrice);
-    const cost = parseMoney(acquisitionPrice);
-    if (amount === null || amount <= 0 || cost === null)
-      return setError('Informe um preço de venda válido.');
-    setSaving(true);
-    setError(null);
-    try {
-      await pricePiece(result.pieceId, {
-        brandId,
-        condition,
-        style,
-        acquisitionPrice: cost,
-        salePrice: amount,
-      });
-      router.replace({
-        pathname: '/inventory/detail',
-        params: { pieceId: result.pieceId, priced: '1' },
-      });
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Não foi possível salvar o preço.',
       );
     } finally {
       setSaving(false);
@@ -234,7 +199,6 @@ export default function PricePieceScreen() {
               accessibilityState={{ selected: selected === item.value }}
               onPress={() => {
                 onSelect(item.value);
-                setResult(null);
               }}
               style={[s.chip, selected === item.value && s.chipSelected]}
             >
@@ -385,7 +349,6 @@ export default function PricePieceScreen() {
                 editable={!quickId}
                 onChangeText={(value) => {
                   setName(value);
-                  setResult(null);
                 }}
                 maxLength={80}
               />
@@ -416,37 +379,14 @@ export default function PricePieceScreen() {
               value={acquisitionPrice}
               onChangeText={(value) => {
                 setAcquisitionPrice(value);
-                setResult(null);
               }}
             />
-            {result ? (
-              <View style={s.result}>
-                <Text style={s.resultTitle}>
-                  Preço sugerido: {currency(result.suggestedPrice)}
-                </Text>
-                <Text style={s.helper}>
-                  {result.score} pontos · valorização de {result.percent}%
-                </Text>
-                <AppTextField
-                  label="Preço de venda (R$)"
-                  keyboardType="decimal-pad"
-                  value={salePrice}
-                  onChangeText={setSalePrice}
-                />
-                <AppButton
-                  title="Salvar preço"
-                  onPress={saveFinalPrice}
-                  loading={saving}
-                />
-              </View>
-            ) : (
-              <AppButton
-                title="✦  Sugerir preço"
-                onPress={suggest}
-                loading={saving}
-                disabled={!activeStore}
-              />
-            )}
+            <AppButton
+              title="✦  Sugerir preço"
+              onPress={suggest}
+              loading={saving}
+              disabled={!activeStore}
+            />
             {error ? (
               <AppFeedback
                 compact
@@ -578,11 +518,5 @@ const s = StyleSheet.create({
   chipTextSelected: {
     color: colors.text.inverse,
     fontFamily: fontFamilies.sansSemiBold,
-  },
-  result: { gap: 10, paddingTop: 4 },
-  resultTitle: {
-    fontFamily: fontFamilies.sansSemiBold,
-    fontSize: 16,
-    color: colors.action.primary,
   },
 });
