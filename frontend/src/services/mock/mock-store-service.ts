@@ -16,6 +16,7 @@ import {
 import type {
   CreatePieceInput,
   CreateStoreInput,
+  PricingPieceInput,
   StoreService,
 } from '@/services/contracts/store-service';
 import { mockAuthService } from '@/services/mock/mock-auth-service';
@@ -126,6 +127,18 @@ function validatePiece(input: CreatePieceInput) {
     throw new Error('Confira o tamanho dos campos da peça.');
 }
 
+function validatePricing(input: PricingPieceInput) {
+  if (!input.brandId) throw new Error('Selecione uma marca.');
+  if (!isPieceCondition(input.condition))
+    throw new Error('Selecione um estado de conservação válido.');
+  if (!isPieceStyle(input.style))
+    throw new Error('Selecione um estilo válido.');
+  if (!Number.isFinite(input.acquisitionPrice) || input.acquisitionPrice < 0)
+    throw new Error('Informe um valor de aquisição válido.');
+  if (!Number.isFinite(input.salePrice) || input.salePrice <= 0)
+    throw new Error('Informe um preço de venda válido.');
+}
+
 function clonePreferences(preferences: StockPreferences): StockPreferences {
   return {
     ...preferences,
@@ -211,6 +224,63 @@ export const mockStoreService: StoreService = {
       throw new Error('Não foi possível salvar a peça neste dispositivo.');
     }
     return { ...piece };
+  },
+  async createQuickPiece(ownerId, storeId, name, input) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    if (!name.trim() || name.trim().length > 80)
+      throw new Error('Informe o nome da peça com até 80 caracteres.');
+    validatePricing(input);
+    const saved = await readStoredPieces(ownerId, storeId);
+    const sequence = (await readSequence(ownerId)) + 1;
+    const piece: StorePiece = {
+      id: `piece-${ownerId}-${sequence}`,
+      storeId,
+      categoryId: '',
+      name: name.trim(),
+      code: formatPieceCode(sequence),
+      ...input,
+    };
+    try {
+      await AsyncStorage.setItem(sequenceKey(ownerId), String(sequence));
+      await AsyncStorage.setItem(
+        pieceKey(ownerId, storeId),
+        JSON.stringify([...saved, piece]),
+      );
+    } catch {
+      throw new Error('Não foi possível cadastrar a peça avulsa.');
+    }
+    return { ...piece };
+  },
+  async pricePiece(ownerId, storeId, pieceId, input) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    validatePricing(input);
+    const saved = await readStoredPieces(ownerId, storeId);
+    const sampleIndex = mockStorePieces.findIndex(
+      (piece) => piece.storeId === storeId && piece.id === pieceId,
+    );
+    const previous =
+      saved.find((piece) => piece.id === pieceId) ??
+      mockStorePieces[sampleIndex];
+    if (!previous) throw new Error('Peça não encontrada nesta loja.');
+    const updated: StorePiece = {
+      ...previous,
+      ...input,
+      code: previous.code ?? formatPieceCode(sampleIndex + 1),
+    };
+    const next = saved.some((piece) => piece.id === pieceId)
+      ? saved.map((piece) => (piece.id === pieceId ? updated : piece))
+      : [...saved, updated];
+    try {
+      await AsyncStorage.setItem(
+        pieceKey(ownerId, storeId),
+        JSON.stringify(next),
+      );
+    } catch {
+      throw new Error('Não foi possível salvar o preço da peça.');
+    }
+    return { ...updated };
   },
   async updatePiece(ownerId, storeId, pieceId, input) {
     await requireOwner(ownerId);

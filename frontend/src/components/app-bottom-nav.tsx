@@ -6,7 +6,9 @@ import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
-type AppBottomNavProps = { active: 'home' | 'inventory' | 'profile' };
+type AppBottomNavProps = {
+  active: 'home' | 'inventory' | 'pricing' | 'profile';
+};
 
 export function AppBottomNav({ active }: AppBottomNavProps) {
   const { compact } = useResponsiveLayout();
@@ -59,10 +61,12 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
           Estoque
         </Text>
       </Pressable>
-      <View
+      <Pressable
         style={styles.item}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+        accessibilityRole="tab"
+        accessibilityLabel="Precificar"
+        accessibilityState={{ selected: active === 'pricing' }}
+        onPress={() => router.replace('/inventory/price')}
       >
         <View style={styles.featuredIcon}>
           <SymbolView
@@ -71,8 +75,12 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
             tintColor={colors.text.inverse}
           />
         </View>
-        <Text style={styles.label}>Precificar</Text>
-      </View>
+        <Text
+          style={[styles.label, active === 'pricing' && styles.activeLabel]}
+        >
+          Precificar
+        </Text>
+      </Pressable>
       <View
         style={styles.item}
         accessibilityElementsHidden

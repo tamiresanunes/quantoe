@@ -33,6 +33,14 @@ export interface CreatePieceInput {
   status: PieceStatus;
 }
 
+export interface PricingPieceInput {
+  brandId: ID;
+  condition: PieceCondition;
+  style: PieceStyle;
+  acquisitionPrice: number;
+  salePrice: number;
+}
+
 export interface StoreService {
   listByOwner(ownerId: ID): Promise<Store[]>;
   listPieces(ownerId: ID, storeId: ID): Promise<StorePiece[]>;
@@ -41,6 +49,18 @@ export interface StoreService {
     ownerId: ID,
     storeId: ID,
     input: CreatePieceInput,
+  ): Promise<StorePiece>;
+  createQuickPiece(
+    ownerId: ID,
+    storeId: ID,
+    name: string,
+    input: PricingPieceInput,
+  ): Promise<StorePiece>;
+  pricePiece(
+    ownerId: ID,
+    storeId: ID,
+    pieceId: ID,
+    input: PricingPieceInput,
   ): Promise<StorePiece>;
   updatePiece(
     ownerId: ID,

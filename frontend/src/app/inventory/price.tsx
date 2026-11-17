@@ -1,8 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { SymbolView } from 'expo-symbols';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,14 +13,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import type { Brand } from '@/features/brands/brand-types';
 import {
+  conditions,
   isPieceCondition,
   isPieceStyle,
+  stylesList,
 } from '@/features/inventory/piece-attributes';
 import { calculatePricing } from '@/features/inventory/pricing';
 import { useStores } from '@/features/stores/store-context';
@@ -25,17 +31,44 @@ import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
+import type { PieceCondition, PieceStyle, StorePiece } from '@/types/models';
+
+const currency = (value: number) =>
+  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function parseMoney(value: string) {
+  const raw = value.trim().replace(/\s|R\$/g, '');
+  const normalized = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(raw)
+    ? raw.replace(/\./g, '').replace(',', '.')
+    : raw.replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : null;
+}
+
+type Result = ReturnType<typeof calculatePricing> & { pieceId: string };
 
 export default function PricePieceScreen() {
   const { pieceId } = useLocalSearchParams<{ pieceId?: string }>();
   const { user } = useAuth();
-  const { activePieces, setPiecePrice } = useStores();
-  const { heroHeight, contentWidth, cardPadding } = useResponsiveLayout();
-  const piece = activePieces.find((item) => item.id === pieceId);
-  const [price, setPrice] = useState<string | null>(null);
+  const { activeStore, activePieces, createQuickPiece, pricePiece } =
+    useStores();
+  const { contentWidth } = useResponsiveLayout();
+  const [mode, setMode] = useState<'stock' | 'quick'>('stock');
+  const [selectedId, setSelectedId] = useState(pieceId ?? '');
+  const [quickId, setQuickId] = useState('');
+  const [name, setName] = useState('');
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [brandId, setBrandId] = useState('');
+  const [condition, setCondition] = useState<PieceCondition>('excellent');
+  const [style, setStyle] = useState<PieceStyle>('social');
+  const [acquisitionPrice, setAcquisitionPrice] = useState('');
+  const [salePrice, setSalePrice] = useState('');
+  const [result, setResult] = useState<Result | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [brands, setBrands] = useState<Brand[]>([]);
+  const initialPiece = useRef<string | null>(null);
+
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -44,52 +77,132 @@ export default function PricePieceScreen() {
       .then((items) => {
         if (active) setBrands(items);
       })
-      .catch(() => setError('Não foi possível carregar a marca.'));
+      .catch(() => {
+        if (active) setError('Não foi possível carregar as marcas.');
+      });
     return () => {
       active = false;
     };
   }, [user]);
-  const brand = brands.find((item) => item.id === piece?.brandId);
-  const suggestion =
-    piece?.acquisitionPrice !== undefined &&
-    isPieceCondition(piece.condition) &&
-    isPieceStyle(piece.style) &&
-    brand
-      ? calculatePricing(
-          piece.acquisitionPrice,
-          brand.tier,
-          piece.condition,
-          piece.style,
-        )
-      : null;
-  const displayedPrice =
-    price ??
-    (piece?.salePrice !== undefined
-      ? String(piece.salePrice).replace('.', ',')
-      : suggestion
-        ? suggestion.suggestedPrice.toFixed(2).replace('.', ',')
-        : '');
 
-  async function save() {
-    const raw = displayedPrice.trim();
-    const normalized = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(raw)
-      ? raw.replace(/\./g, '').replace(',', '.')
-      : raw.replace(',', '.');
-    const amount = Number(normalized);
-    if (
-      !/^\d+(\.\d{1,2})?$/.test(normalized) ||
-      !Number.isFinite(amount) ||
-      amount <= 0
-    )
-      return setError('Informe um preço de venda válido.');
-    if (!piece) return setError('Peça não encontrada nesta loja.');
+  useEffect(() => {
+    if (mode === 'quick') return;
+    const targetId = pieceId ?? activePieces[0]?.id;
+    if (!targetId || initialPiece.current === targetId) return;
+    const piece = activePieces.find((item) => item.id === targetId);
+    if (!piece) return;
+    initialPiece.current = targetId;
+    selectPiece(piece);
+    // Inicializa a seleção quando as peças terminam de carregar.
+  }, [pieceId, activePieces, mode]);
+
+  function selectPiece(piece: StorePiece) {
+    setMode('stock');
+    setSelectedId(piece.id);
+    setBrandId(piece.brandId ?? '');
+    setCondition(
+      isPieceCondition(piece.condition) ? piece.condition : 'excellent',
+    );
+    setStyle(isPieceStyle(piece.style) ? piece.style : 'social');
+    setAcquisitionPrice(
+      piece.acquisitionPrice === undefined
+        ? ''
+        : String(piece.acquisitionPrice).replace('.', ','),
+    );
+    setSalePrice(
+      piece.salePrice === undefined
+        ? ''
+        : String(piece.salePrice).replace('.', ','),
+    );
+    setResult(null);
+    setError(null);
+  }
+
+  function chooseMode(next: 'stock' | 'quick') {
+    if (next === mode) return;
+    if (next === 'stock') {
+      const selected = activePieces.find((piece) => piece.id === selectedId);
+      if (selected) selectPiece(selected);
+      else setMode('stock');
+      return;
+    }
+    setMode(next);
+    setResult(null);
+    setError(null);
+    if (next === 'quick') {
+      setBrandId('');
+      setCondition('excellent');
+      setStyle('social');
+      setAcquisitionPrice('');
+      setSalePrice('');
+    }
+  }
+
+  async function suggest() {
+    if (!activeStore)
+      return setError('Selecione uma loja antes de precificar.');
+    if (mode === 'stock' && !selectedId)
+      return setError('Selecione uma peça do estoque.');
+    if (mode === 'quick' && !name.trim())
+      return setError('Informe o nome da peça.');
+    const brand = brands.find((item) => item.id === brandId);
+    if (!brand) return setError('Selecione uma marca.');
+    const cost = parseMoney(acquisitionPrice);
+    if (cost === null || cost < 0)
+      return setError('Informe um valor de aquisição válido.');
+    const pricing = calculatePricing(cost, brand.tier, condition, style);
+    if (pricing.suggestedPrice <= 0)
+      return setError('O preço sugerido deve ser maior que zero.');
+    const input = {
+      brandId,
+      condition,
+      style,
+      acquisitionPrice: cost,
+      salePrice: pricing.suggestedPrice,
+    };
     setSaving(true);
     setError(null);
     try {
-      await setPiecePrice(piece.id, amount);
+      let pricedPieceId = selectedId;
+      if (mode === 'quick') {
+        const piece = quickId
+          ? await pricePiece(quickId, input)
+          : await createQuickPiece(name.trim(), input);
+        setQuickId(piece.id);
+        pricedPieceId = piece.id;
+      }
+      setSalePrice(pricing.suggestedPrice.toFixed(2).replace('.', ','));
+      setResult({ ...pricing, pieceId: pricedPieceId });
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível precificar a peça.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveFinalPrice() {
+    if (!result) return;
+    const amount = parseMoney(salePrice);
+    const cost = parseMoney(acquisitionPrice);
+    if (amount === null || amount <= 0 || cost === null)
+      return setError('Informe um preço de venda válido.');
+    setSaving(true);
+    setError(null);
+    try {
+      await pricePiece(result.pieceId, {
+        brandId,
+        condition,
+        style,
+        acquisitionPrice: cost,
+        salePrice: amount,
+      });
       router.replace({
         pathname: '/inventory/detail',
-        params: { pieceId: piece.id, priced: '1' },
+        params: { pieceId: result.pieceId, priced: '1' },
       });
     } catch (cause) {
       setError(
@@ -102,6 +215,44 @@ export default function PricePieceScreen() {
     }
   }
 
+  function chips<T extends string>(
+    items: readonly { value: T; label: string }[],
+    selected: T,
+    onSelect: (value: T) => void,
+  ) {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={s.chips}>
+          {items.map((item) => (
+            <Pressable
+              key={item.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selected === item.value }}
+              onPress={() => {
+                onSelect(item.value);
+                setResult(null);
+              }}
+              style={[s.chip, selected === item.value && s.chipSelected]}
+            >
+              <Text
+                style={[
+                  s.chipText,
+                  selected === item.value && s.chipTextSelected,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+    );
+  }
+
   return (
     <SafeAreaView style={s.screen}>
       <KeyboardAvoidingView
@@ -112,48 +263,190 @@ export default function PricePieceScreen() {
           contentContainerStyle={s.content}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[s.hero, { height: heroHeight }]}>
-            <Text accessibilityRole="header" style={s.title}>
-              Precificar peça
-            </Text>
-            <Text style={s.subtitle}>
-              {piece?.name ?? 'Peça não encontrada'}
-            </Text>
+          <View style={s.hero}>
+            <View style={s.header}>
+              <Text accessibilityRole="header" style={s.title}>
+                Precificar
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Voltar ao estoque"
+                onPress={() => router.replace('/inventory')}
+                style={s.history}
+              >
+                <SymbolView
+                  name={{
+                    ios: 'clock.arrow.circlepath',
+                    android: 'history',
+                    web: 'history',
+                  }}
+                  size={18}
+                  tintColor={colors.text.primary}
+                />
+              </Pressable>
+            </View>
+            <View style={s.toggle}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: mode === 'stock' }}
+                onPress={() => chooseMode('stock')}
+                style={[s.toggleItem, mode === 'stock' && s.toggleSelected]}
+              >
+                <Text
+                  style={[
+                    s.toggleText,
+                    mode === 'stock' && s.toggleTextSelected,
+                  ]}
+                >
+                  Peça do estoque
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: mode === 'quick' }}
+                onPress={() => chooseMode('quick')}
+                style={[s.toggleItem, mode === 'quick' && s.toggleSelected]}
+              >
+                <Text
+                  style={[
+                    s.toggleText,
+                    mode === 'quick' && s.toggleTextSelected,
+                  ]}
+                >
+                  Peça avulsa
+                </Text>
+              </Pressable>
+            </View>
           </View>
-          <View
-            style={[
-              s.card,
-              {
-                width: contentWidth,
-                padding: cardPadding,
-                marginTop: 104 - heroHeight,
-              },
-            ]}
-          >
-            {suggestion ? (
-              <View>
-                <Text style={s.subtitle}>
-                  Índice: {suggestion.score} pontos (marca +
-                  {suggestion.brandPoints}, conservação +
-                  {suggestion.conditionPoints}, estilo +{suggestion.stylePoints}
-                  )
-                </Text>
-                <Text style={s.subtitle}>
-                  Valorização: {suggestion.percent}% · Sugestão:{' '}
-                  {suggestion.suggestedPrice.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
-                </Text>
+          <View style={[s.card, { width: contentWidth }]}>
+            {mode === 'stock' ? (
+              <View style={s.fieldGroup}>
+                <Text style={s.label}>Peça do estoque</Text>
+                {activePieces.length ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    <View style={s.pieces}>
+                      {activePieces.map((piece, index) => (
+                        <Pressable
+                          key={piece.id}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: selectedId === piece.id,
+                          }}
+                          onPress={() => selectPiece(piece)}
+                          style={[
+                            s.piece,
+                            selectedId === piece.id && s.pieceSelected,
+                          ]}
+                        >
+                          <View
+                            style={[
+                              s.pieceArt,
+                              {
+                                backgroundColor: [
+                                  '#D6BAA7',
+                                  '#C78265',
+                                  '#E2B05E',
+                                  '#D9CABE',
+                                ][index % 4],
+                              },
+                            ]}
+                          >
+                            {piece.photoUri ? (
+                              <Image
+                                source={{ uri: piece.photoUri }}
+                                style={s.pieceImage}
+                              />
+                            ) : (
+                              <Text style={s.pieceIcon}>✦</Text>
+                            )}
+                          </View>
+                          <Text numberOfLines={2} style={s.pieceName}>
+                            {piece.name}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </ScrollView>
+                ) : (
+                  <Text style={s.helper}>
+                    Nenhuma peça no estoque desta loja.
+                  </Text>
+                )}
               </View>
-            ) : null}
+            ) : (
+              <AppTextField
+                label="Nome da peça"
+                placeholder="Ex.: Jaqueta jeans"
+                value={name}
+                editable={!quickId}
+                onChangeText={(value) => {
+                  setName(value);
+                  setResult(null);
+                }}
+                maxLength={80}
+              />
+            )}
+            <Text style={s.helper}>
+              A sugestão considera apenas marca, estado de conservação e estilo.
+            </Text>
+            <View style={s.fieldGroup}>
+              <Text style={s.label}>Marca</Text>
+              {chips(
+                brands.map((brand) => ({ value: brand.id, label: brand.name })),
+                brandId,
+                setBrandId,
+              )}
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.label}>Estado de conservação</Text>
+              {chips(conditions, condition, setCondition)}
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.label}>Estilo</Text>
+              {chips(stylesList, style, setStyle)}
+            </View>
             <AppTextField
-              label="Preço de venda (R$)"
+              label="Valor de aquisição (R$)"
               placeholder="0,00"
               keyboardType="decimal-pad"
-              value={displayedPrice}
-              onChangeText={setPrice}
+              value={acquisitionPrice}
+              onChangeText={(value) => {
+                setAcquisitionPrice(value);
+                setResult(null);
+              }}
             />
+            {result ? (
+              <View style={s.result}>
+                <Text style={s.resultTitle}>
+                  Preço sugerido: {currency(result.suggestedPrice)}
+                </Text>
+                <Text style={s.helper}>
+                  {result.score} pontos · valorização de {result.percent}%
+                </Text>
+                <AppTextField
+                  label="Preço de venda (R$)"
+                  keyboardType="decimal-pad"
+                  value={salePrice}
+                  onChangeText={setSalePrice}
+                />
+                <AppButton
+                  title="Salvar preço"
+                  onPress={saveFinalPrice}
+                  loading={saving}
+                />
+              </View>
+            ) : (
+              <AppButton
+                title="✦  Sugerir preço"
+                onPress={suggest}
+                loading={saving}
+                disabled={!activeStore}
+              />
+            )}
             {error ? (
               <AppFeedback
                 compact
@@ -162,27 +455,10 @@ export default function PricePieceScreen() {
                 onDismiss={() => setError(null)}
               />
             ) : null}
-            <AppButton
-              title="Salvar preço"
-              onPress={save}
-              loading={saving}
-              disabled={!piece}
-            />
-            <AppButton
-              title="Voltar ao estoque"
-              variant="secondary"
-              onPress={() =>
-                piece
-                  ? router.replace({
-                      pathname: '/inventory/detail',
-                      params: { pieceId: piece.id },
-                    })
-                  : router.replace('/inventory')
-              }
-            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <AppBottomNav active="pricing" />
     </SafeAreaView>
   );
 }
@@ -194,28 +470,119 @@ const s = StyleSheet.create({
   hero: {
     width: '100%',
     backgroundColor: colors.surface.selected,
-    padding: 17,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
+    gap: 26,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 22,
+    fontSize: 23,
     color: colors.text.primary,
   },
-  subtitle: {
+  history: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surface.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggle: { flexDirection: 'row', gap: 12 },
+  toggleItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 15,
+  },
+  toggleSelected: { backgroundColor: colors.surface.primary },
+  toggleText: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 12,
+    color: colors.text.primary,
+  },
+  toggleTextSelected: { fontFamily: fontFamilies.sansSemiBold },
+  card: {
+    maxWidth: 440,
+    marginTop: 14,
+    padding: 16,
+    gap: 18,
+    backgroundColor: colors.surface.primary,
+    borderRadius: 19,
+    shadowColor: colors.text.primary,
+    shadowOpacity: 0.09,
+    shadowRadius: 9,
+    elevation: 3,
+  },
+  fieldGroup: { gap: 9 },
+  label: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 13,
+    color: colors.text.primary,
+  },
+  helper: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 11,
     color: colors.text.secondary,
   },
-  card: {
-    maxWidth: 420,
-    gap: 16,
+  pieces: { flexDirection: 'row', gap: 10 },
+  piece: {
+    width: 78,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    borderRadius: 16,
+  },
+  pieceSelected: { borderColor: colors.action.primary },
+  pieceArt: {
+    width: 70,
+    height: 64,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  pieceImage: { width: '100%', height: '100%' },
+  pieceIcon: { fontSize: 26, color: colors.text.auxiliary },
+  pieceName: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 10,
+    color: colors.text.primary,
+    marginTop: 5,
+  },
+  chips: { flexDirection: 'row', gap: 7, paddingBottom: 2 },
+  chip: {
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border.default,
     backgroundColor: colors.surface.primary,
-    borderRadius: 19,
-    shadowColor: colors.text.primary,
-    shadowOpacity: 0.1,
-    shadowRadius: 9,
-    elevation: 3,
+  },
+  chipSelected: {
+    backgroundColor: colors.text.primary,
+    borderColor: colors.text.primary,
+  },
+  chipText: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 11,
+    color: colors.text.primary,
+  },
+  chipTextSelected: {
+    color: colors.text.inverse,
+    fontFamily: fontFamilies.sansSemiBold,
+  },
+  result: { gap: 10, paddingTop: 4 },
+  resultTitle: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 16,
+    color: colors.action.primary,
   },
 });
