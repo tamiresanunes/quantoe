@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { PieceCondition, PieceStatus, PieceStyle } from '@/types/models';
+import {
+  isPieceCondition,
+  isPieceStyle,
+} from '@/features/inventory/piece-attributes';
 
 export type PieceDraft = {
   photoUri: string | null;
@@ -45,12 +49,8 @@ function isPieceDraft(value: unknown): value is PieceDraft {
       'collection',
       'notes',
     ].every((field) => typeof draft[field] === 'string') &&
-    ['new', 'excellent', 'good', 'fair', 'worn'].includes(
-      String(draft.condition),
-    ) &&
-    ['casual', 'social', 'vintage', 'beach', 'winter', 'other'].includes(
-      String(draft.style),
-    ) &&
+    isPieceCondition(draft.condition) &&
+    isPieceStyle(draft.style) &&
     ['available', 'reserved', 'clearance', 'sold'].includes(
       String(draft.status),
     )

@@ -17,35 +17,20 @@ import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import type { Brand } from '@/features/brands/brand-types';
+import {
+  conditionLabels,
+  isPieceCondition,
+  isPieceStyle,
+  styleLabels,
+} from '@/features/inventory/piece-attributes';
 import { useStores } from '@/features/stores/store-context';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
-import type {
-  Category,
-  PieceCondition,
-  PieceStatus,
-  PieceStyle,
-  StorePiece,
-} from '@/types/models';
+import type { Category, PieceStatus, StorePiece } from '@/types/models';
 
-const conditionLabels: Record<PieceCondition, string> = {
-  new: 'Novo',
-  excellent: 'Ótimo',
-  good: 'Bom',
-  fair: 'Regular',
-  worn: 'Desgastado',
-};
-const styleLabels: Record<PieceStyle, string> = {
-  casual: 'Casual',
-  social: 'Social',
-  vintage: 'Vintage',
-  beach: 'Praia',
-  winter: 'Inverno',
-  other: 'Outro',
-};
 const statusLabels: Record<PieceStatus, string> = {
   available: 'Livre',
   reserved: 'Reservada',
@@ -66,8 +51,8 @@ function missingFields(
     missing.push('categoria');
   if (!piece.brandId || !brands.some((item) => item.id === piece.brandId))
     missing.push('marca');
-  if (!piece.condition) missing.push('estado de conservação');
-  if (!piece.style) missing.push('estilo');
+  if (!isPieceCondition(piece.condition)) missing.push('estado de conservação');
+  if (!isPieceStyle(piece.style)) missing.push('estilo');
   if (!piece.status) missing.push('status');
   if (
     piece.acquisitionPrice === undefined ||
@@ -266,7 +251,7 @@ export default function PieceDetailScreen() {
                 </Text>
                 <Text style={s.meta}>
                   {piece.code ?? 'Sem código'} · Tam. {piece.size || '—'} ·{' '}
-                  {piece.condition
+                  {isPieceCondition(piece.condition)
                     ? conditionLabels[piece.condition]
                     : 'Conservação pendente'}
                 </Text>
@@ -314,7 +299,7 @@ export default function PieceDetailScreen() {
                 <View style={s.detailRow}>
                   <Text style={s.detailLabel}>Estilo</Text>
                   <Text style={s.detailValue}>
-                    {piece.style ? styleLabels[piece.style] : '—'}
+                    {isPieceStyle(piece.style) ? styleLabels[piece.style] : '—'}
                   </Text>
                 </View>
                 <View style={s.detailRow}>

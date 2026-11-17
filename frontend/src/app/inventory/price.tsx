@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,24 +13,62 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
+import { useAuth } from '@/features/auth/auth-context';
+import type { Brand } from '@/features/brands/brand-types';
+import {
+  isPieceCondition,
+  isPieceStyle,
+} from '@/features/inventory/piece-attributes';
+import { calculatePricing } from '@/features/inventory/pricing';
 import { useStores } from '@/features/stores/store-context';
+import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 export default function PricePieceScreen() {
   const { pieceId } = useLocalSearchParams<{ pieceId?: string }>();
+  const { user } = useAuth();
   const { activePieces, setPiecePrice } = useStores();
   const { heroHeight, contentWidth, cardPadding } = useResponsiveLayout();
   const piece = activePieces.find((item) => item.id === pieceId);
   const [price, setPrice] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    mockBrandService
+      .list(user.id)
+      .then((items) => {
+        if (active) setBrands(items);
+      })
+      .catch(() => setError('Não foi possível carregar a marca.'));
+    return () => {
+      active = false;
+    };
+  }, [user]);
+  const brand = brands.find((item) => item.id === piece?.brandId);
+  const suggestion =
+    piece?.acquisitionPrice !== undefined &&
+    isPieceCondition(piece.condition) &&
+    isPieceStyle(piece.style) &&
+    brand
+      ? calculatePricing(
+          piece.acquisitionPrice,
+          brand.tier,
+          piece.condition,
+          piece.style,
+        )
+      : null;
   const displayedPrice =
     price ??
     (piece?.salePrice !== undefined
       ? String(piece.salePrice).replace('.', ',')
-      : '');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+      : suggestion
+        ? suggestion.suggestedPrice.toFixed(2).replace('.', ',')
+        : '');
 
   async function save() {
     const raw = displayedPrice.trim();
@@ -92,6 +130,23 @@ export default function PricePieceScreen() {
               },
             ]}
           >
+            {suggestion ? (
+              <View>
+                <Text style={s.subtitle}>
+                  Índice: {suggestion.score} pontos (marca +
+                  {suggestion.brandPoints}, conservação +
+                  {suggestion.conditionPoints}, estilo +{suggestion.stylePoints}
+                  )
+                </Text>
+                <Text style={s.subtitle}>
+                  Valorização: {suggestion.percent}% · Sugestão:{' '}
+                  {suggestion.suggestedPrice.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })}
+                </Text>
+              </View>
+            ) : null}
             <AppTextField
               label="Preço de venda (R$)"
               placeholder="0,00"

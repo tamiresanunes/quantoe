@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import type { Brand } from '@/features/brands/brand-types';
+import { conditions, stylesList } from '@/features/inventory/piece-attributes';
 import {
   pieceDraftKey,
   readPieceDraft,
@@ -43,21 +44,6 @@ import type {
   PieceStyle,
 } from '@/types/models';
 
-const conditions: { value: PieceCondition; label: string }[] = [
-  { value: 'new', label: 'Novo' },
-  { value: 'excellent', label: 'Ótimo' },
-  { value: 'good', label: 'Bom' },
-  { value: 'fair', label: 'Regular' },
-  { value: 'worn', label: 'Desgastado' },
-];
-const stylesList: { value: PieceStyle; label: string }[] = [
-  { value: 'casual', label: 'Casual' },
-  { value: 'social', label: 'Social' },
-  { value: 'vintage', label: 'Vintage' },
-  { value: 'beach', label: 'Praia' },
-  { value: 'winter', label: 'Inverno' },
-  { value: 'other', label: 'Outro' },
-];
 const statuses: { value: PieceStatus; label: string }[] = [
   { value: 'available', label: 'Livre' },
   { value: 'reserved', label: 'Reservada' },
@@ -370,7 +356,7 @@ export default function NewPieceScreen() {
   }
 
   function choices<T extends string>(
-    items: { value: T; label: string }[],
+    items: readonly { value: T; label: string }[],
     value: T,
     onChange: (next: T) => void,
   ) {

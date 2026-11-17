@@ -39,9 +39,21 @@ export interface StorePiece {
   salePrice?: number;
 }
 
-export type PieceCondition = 'new' | 'excellent' | 'good' | 'fair' | 'worn';
+export type PieceCondition =
+  'new_with_tag' | 'excellent' | 'very_good' | 'good' | 'fair';
 export type PieceStyle =
-  'casual' | 'social' | 'vintage' | 'beach' | 'winter' | 'other';
+  | 'vintage'
+  | 'old_money'
+  | 'y2k'
+  | 'retro'
+  | 'streetwear'
+  | 'cottagecore'
+  | 'boho'
+  | 'classic'
+  | 'minimalist'
+  | 'sporty'
+  | 'social'
+  | 'casual';
 export type PieceStatus = 'available' | 'reserved' | 'clearance' | 'sold';
 
 export interface Category {

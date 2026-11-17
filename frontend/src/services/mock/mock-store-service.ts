@@ -5,6 +5,10 @@ import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { citiesByState, states } from '@/features/stores/brazil-locations';
 import { pieceDraftKey } from '@/features/inventory/piece-draft';
 import {
+  isPieceCondition,
+  isPieceStyle,
+} from '@/features/inventory/piece-attributes';
+import {
   defaultStockPreferences,
   isValidStockPreferences,
   type StockPreferences,
@@ -84,13 +88,9 @@ function validatePiece(input: CreatePieceInput) {
     throw new Error('Informe o nome da peça com até 80 caracteres.');
   if (!input.categoryId) throw new Error('Selecione uma categoria.');
   if (!input.brandId) throw new Error('Selecione uma marca.');
-  if (!['new', 'excellent', 'good', 'fair', 'worn'].includes(input.condition))
+  if (!isPieceCondition(input.condition))
     throw new Error('Selecione um estado de conservação válido.');
-  if (
-    !['casual', 'social', 'vintage', 'beach', 'winter', 'other'].includes(
-      input.style,
-    )
-  )
+  if (!isPieceStyle(input.style))
     throw new Error('Selecione um estilo válido.');
   if (!['available', 'reserved', 'clearance', 'sold'].includes(input.status))
     throw new Error('Selecione um status válido.');
@@ -263,8 +263,8 @@ export const mockStoreService: StoreService = {
       !target.name.trim() ||
       !target.categoryId ||
       !target.brandId ||
-      !target.condition ||
-      !target.style ||
+      !isPieceCondition(target.condition) ||
+      !isPieceStyle(target.style) ||
       !target.status ||
       target.acquisitionPrice === undefined ||
       !Number.isFinite(target.acquisitionPrice) ||
