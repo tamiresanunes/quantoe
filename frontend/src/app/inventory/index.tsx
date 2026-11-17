@@ -13,11 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppFeedback } from '@/components/app-feedback';
-import { EmptyState } from '@/components/empty-state';
-import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import type { Brand } from '@/features/brands/brand-types';
 import { InventoryPieceCard } from '@/features/inventory/inventory-piece-card';
+import {
+  InventoryEmptyState,
+  InventoryLoadingState,
+} from '@/features/inventory/inventory-states';
 import { useStores } from '@/features/stores/store-context';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
@@ -135,6 +137,13 @@ export default function InventoryScreen() {
     ...(hasUncategorized ? [UNCATEGORIZED] : []),
   ].filter((key) => visible.some((piece) => categoryKey(piece) === key));
   const cardWidth = (contentWidth - 10) / 2;
+  const noMatchesTitle = query.trim()
+    ? 'Nenhuma peça encontrada'
+    : filter === 'low'
+      ? 'Nenhuma peça com estoque baixo'
+      : filter === 'exhausted'
+        ? 'Nenhuma peça esgotada'
+        : 'Nenhuma peça nesta categoria';
 
   function grid(pieces: StorePiece[]) {
     return (
@@ -182,8 +191,9 @@ export default function InventoryScreen() {
                   Estoque
                 </Text>
                 <Text style={s.count}>
-                  {activePieces.length}{' '}
-                  {activePieces.length === 1 ? 'PEÇA' : 'PEÇAS'}
+                  {loading || optionsLoading
+                    ? 'CARREGANDO PEÇAS'
+                    : `${activePieces.length} ${activePieces.length === 1 ? 'PEÇA' : 'PEÇAS'}`}
                 </Text>
               </View>
               <Pressable
@@ -316,23 +326,33 @@ export default function InventoryScreen() {
             />
           ) : null}
           {loading || optionsLoading ? (
-            <LoadingState message="Carregando estoque..." />
+            <InventoryLoadingState cardWidth={cardWidth} />
           ) : error ? (
             <AppFeedback compact variant="error" title={error} />
           ) : !activeStore ? (
-            <EmptyState
+            <InventoryEmptyState
               title="Nenhuma loja ativa"
-              message="Cadastre ou selecione uma loja para organizar as peças."
+              message="Selecione uma loja para ver as peças do estoque."
+              actionLabel="Ver minhas lojas"
+              onAction={() => router.replace('/stores')}
             />
           ) : activePieces.length === 0 ? (
-            <EmptyState
+            <InventoryEmptyState
               title="Seu estoque está vazio"
-              message="Cadastre a primeira peça desta loja."
+              message="As peças cadastradas nesta loja aparecerão aqui."
+              actionLabel="Cadastrar primeira peça"
+              onAction={() => router.push('/inventory/new')}
             />
           ) : visible.length === 0 ? (
-            <EmptyState
-              title="Nenhuma peça encontrada"
-              message="Ajuste a busca ou os filtros para ver outras peças."
+            <InventoryEmptyState
+              icon="search"
+              title={noMatchesTitle}
+              message="Tente outra busca ou volte a mostrar todas as peças."
+              actionLabel="Limpar busca e filtros"
+              onAction={() => {
+                setQuery('');
+                setFilter('all');
+              }}
             />
           ) : view === 'pieces' ? (
             grid(visible)
