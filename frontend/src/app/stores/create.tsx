@@ -70,7 +70,7 @@ export default function CreateStoreScreen() {
         city,
         logoUrl,
       });
-      router.replace({ pathname: '/stores', params: { storeCreated: '1' } });
+      router.replace('/home');
     } catch (cause) {
       setError(
         cause instanceof Error

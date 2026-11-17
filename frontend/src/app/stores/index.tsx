@@ -364,7 +364,7 @@ export default function StoresScreen() {
           ) : null}
         </View>
       </ScrollView>
-      <AppBottomNav active="home" />
+      <AppBottomNav active="stores" />
       <EditStoreModal
         store={editTarget}
         onClose={() => setEditTarget(null)}
