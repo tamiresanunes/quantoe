@@ -48,6 +48,10 @@ function AppStack() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="inventory/price" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="inventory/suggestion"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
         <Stack.Screen
