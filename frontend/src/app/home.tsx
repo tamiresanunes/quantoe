@@ -22,6 +22,7 @@ import {
   minimumStockForPiece,
   stockAlertForPiece,
 } from '@/features/inventory/stock-alerts';
+import { inventoryAlerts } from '@/features/inventory/inventory-alerts';
 import {
   defaultStockPreferences,
   type StockPreferences,
@@ -107,6 +108,9 @@ export default function HomeScreen() {
     (item) => item.kind === 'exhausted',
   ).length;
   const lowCount = alerts.filter((item) => item.kind === 'low').length;
+  const alertSummary = inventoryAlerts(activePieces, categories, preferences);
+  const alertCount =
+    alertSummary.idlePieces.length + alertSummary.lowCategories.length;
   const isLoading =
     loading || (!!activeStore && loadedStoreId !== activeStore.id);
 
@@ -150,7 +154,7 @@ export default function HomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Ver peças com alerta"
-              onPress={() => openInventory('alerts')}
+              onPress={() => router.push('/alerts')}
               style={s.bell}
             >
               <SymbolView
@@ -162,7 +166,7 @@ export default function HomeScreen() {
                 size={17}
                 tintColor={colors.text.primary}
               />
-              {alerts.length ? <View style={s.notificationDot} /> : null}
+              {alertCount ? <View style={s.notificationDot} /> : null}
             </Pressable>
           </View>
 
@@ -303,7 +307,7 @@ export default function HomeScreen() {
                 <Text style={s.sectionTitle}>Peças com alerta</Text>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => openInventory('alerts')}
+                  onPress={() => router.push('/alerts')}
                 >
                   <Text style={s.seeAll}>Ver todas</Text>
                 </Pressable>

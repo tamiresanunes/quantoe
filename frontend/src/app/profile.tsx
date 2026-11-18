@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState, type ComponentProps } from 'react';
+import { type ComponentProps } from 'react';
 import {
   Image,
   Pressable,
@@ -12,8 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppBottomNav } from '@/components/app-bottom-nav';
-import { AppButton } from '@/components/app-button';
-import { AppModal } from '@/components/app-modal';
 import { useAuth } from '@/features/auth/auth-context';
 import { useStores } from '@/features/stores/store-context';
 import { colors } from '@/theme/colors';
@@ -61,9 +59,8 @@ function MenuGroup({ items }: { items: MenuItem[] }) {
 
 export default function ProfileScreen() {
   const { heroHeight, contentWidth } = useResponsiveLayout();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { stores, activeStore } = useStores();
-  const [openSection, setOpenSection] = useState<string | null>(null);
   const storeCount = stores.length;
   const storeSummary = activeStore
     ? `${activeStore.name} · ${storeCount} ${storeCount === 1 ? 'loja' : 'lojas'}`
@@ -170,35 +167,13 @@ export default function ProfileScreen() {
                   android: 'settings',
                   web: 'settings',
                 },
-                action: () => setOpenSection('Configurações'),
+                action: () => router.push('/profile/settings'),
               },
             ]}
           />
         </View>
       </ScrollView>
       <AppBottomNav active="profile" />
-      <AppModal
-        visible={openSection !== null}
-        title={openSection || ''}
-        onClose={() => setOpenSection(null)}
-        titleStyle={styles.modalTitle}
-      >
-        {openSection === 'Configurações' ? (
-          <AppButton
-            title="Sair da conta"
-            variant="secondary"
-            onPress={async () => {
-              await signOut();
-              setOpenSection(null);
-              router.replace('/auth/login');
-            }}
-          />
-        ) : (
-          <Text style={styles.comingSoon}>
-            Esta seção estará disponível em breve.
-          </Text>
-        )}
-      </AppModal>
     </SafeAreaView>
   );
 }
@@ -302,12 +277,5 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.sansMedium,
     fontSize: 11,
     color: colors.text.primary,
-  },
-  modalTitle: { fontFamily: fontFamilies.display, fontSize: 19 },
-  comingSoon: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 13,
-    lineHeight: 19,
   },
 });
