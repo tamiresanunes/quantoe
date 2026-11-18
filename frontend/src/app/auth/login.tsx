@@ -52,7 +52,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      router.replace({ pathname: '/stores', params: { loggedIn: '1' } });
+      router.replace('/home');
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : 'Não foi possível entrar.',

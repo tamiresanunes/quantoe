@@ -16,11 +16,17 @@ import { AppFeedback } from '@/components/app-feedback';
 import { useAuth } from '@/features/auth/auth-context';
 import type { Brand } from '@/features/brands/brand-types';
 import { InventoryPieceCard } from '@/features/inventory/inventory-piece-card';
+import { stockAlertForPiece } from '@/features/inventory/stock-alerts';
 import {
   InventoryEmptyState,
   InventoryLoadingState,
 } from '@/features/inventory/inventory-states';
 import { useStores } from '@/features/stores/store-context';
+import {
+  defaultStockPreferences,
+  type StockPreferences,
+} from '@/features/stores/stock-preferences';
+import { storeService } from '@/services';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
 import { colors } from '@/theme/colors';
@@ -38,9 +44,16 @@ function normalize(value: string) {
 }
 
 export default function InventoryScreen() {
-  const { created, priced } = useLocalSearchParams<{
+  const {
+    created,
+    priced,
+    query: initialQuery,
+    filter: initialFilter,
+  } = useLocalSearchParams<{
     created?: string;
     priced?: string;
+    query?: string;
+    filter?: string;
   }>();
   const { user } = useAuth();
   const { activeStore, activePieces, loading, error } = useStores();
@@ -48,24 +61,33 @@ export default function InventoryScreen() {
   const [notice, setNotice] = useState(created === '1' || priced === '1');
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [optionsLoading, setOptionsLoading] = useState(true);
+  const [preferences, setPreferences] = useState<StockPreferences>(
+    defaultStockPreferences,
+  );
+  const [loadedStoreId, setLoadedStoreId] = useState<string | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState(initialQuery ?? '');
+  const [filter, setFilter] = useState(initialFilter ?? 'all');
   const [view, setView] = useState<'pieces' | 'categories'>('pieces');
   const [priceOrder, setPriceOrder] = useState<'none' | 'asc' | 'desc'>('none');
 
+  const ownerId = user?.id;
+  const storeId = activeStore?.id;
+  const optionsLoading = !!storeId && loadedStoreId !== storeId;
   useEffect(() => {
-    if (!user) return;
+    if (!ownerId || !storeId) return;
     let active = true;
     Promise.all([
-      mockCategoryService.list(user.id),
-      mockBrandService.list(user.id),
+      mockCategoryService.list(ownerId),
+      mockBrandService.list(ownerId),
+      storeService.getStockPreferences(ownerId, storeId),
     ])
-      .then(([nextCategories, nextBrands]) => {
+      .then(([nextCategories, nextBrands, nextPreferences]) => {
         if (!active) return;
         setCategories(nextCategories);
         setBrands(nextBrands);
+        setPreferences(nextPreferences);
+        setOptionsError(null);
       })
       .catch((cause) => {
         if (active)
@@ -76,12 +98,12 @@ export default function InventoryScreen() {
           );
       })
       .finally(() => {
-        if (active) setOptionsLoading(false);
+        if (active) setLoadedStoreId(storeId);
       });
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [ownerId, storeId]);
 
   const categoryIds = new Set(categories.map((category) => category.id));
   const categoryKey = (piece: StorePiece) =>
@@ -91,18 +113,8 @@ export default function InventoryScreen() {
   const brandName = (piece: StorePiece) =>
     brands.find((brand) => brand.id === piece.brandId)?.name ??
     'Marca pendente';
-  const exhausted = (piece: StorePiece) =>
-    piece.quantity === 0 || piece.status === 'sold';
-  const lowStock = (piece: StorePiece) => {
-    const minimum =
-      categories.find((category) => category.id === piece.categoryId)
-        ?.minimumStock ?? 2;
-    return (
-      !exhausted(piece) &&
-      piece.quantity !== undefined &&
-      piece.quantity <= minimum
-    );
-  };
+  const alertFor = (piece: StorePiece) =>
+    stockAlertForPiece(piece, categories, preferences);
   const availableCategories = categories.filter((category) =>
     activePieces.some((piece) => piece.categoryId === category.id),
   );
@@ -119,8 +131,9 @@ export default function InventoryScreen() {
         ).includes(search);
       const matchesFilter =
         filter === 'all' ||
-        (filter === 'low' && lowStock(piece)) ||
-        (filter === 'exhausted' && exhausted(piece)) ||
+        (filter === 'alerts' && alertFor(piece) !== null) ||
+        (filter === 'low' && alertFor(piece) === 'low') ||
+        (filter === 'exhausted' && alertFor(piece) === 'exhausted') ||
         categoryKey(piece) === filter;
       return matchesSearch && matchesFilter;
     })
@@ -139,11 +152,13 @@ export default function InventoryScreen() {
   const cardWidth = (contentWidth - 10) / 2;
   const noMatchesTitle = query.trim()
     ? 'Nenhuma peça encontrada'
-    : filter === 'low'
-      ? 'Nenhuma peça com estoque baixo'
-      : filter === 'exhausted'
-        ? 'Nenhuma peça esgotada'
-        : 'Nenhuma peça nesta categoria';
+    : filter === 'alerts'
+      ? 'Nenhuma peça com alerta'
+      : filter === 'low'
+        ? 'Nenhuma peça com estoque baixo'
+        : filter === 'exhausted'
+          ? 'Nenhuma peça esgotada'
+          : 'Nenhuma peça nesta categoria';
 
   function grid(pieces: StorePiece[]) {
     return (
@@ -261,6 +276,7 @@ export default function InventoryScreen() {
             >
               <View style={s.filters}>
                 {chip('all', 'Todas')}
+                {chip('alerts', 'Com alerta')}
                 {chip('low', 'Estoque baixo')}
                 {chip('exhausted', 'Esgotadas')}
                 {availableCategories.map((category) =>

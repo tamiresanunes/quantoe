@@ -7,7 +7,7 @@ import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 type AppBottomNavProps = {
-  active: 'home' | 'inventory' | 'pricing' | 'profile';
+  active: 'home' | 'inventory' | 'pricing' | 'profile' | 'stores';
 };
 
 export function AppBottomNav({ active }: AppBottomNavProps) {
@@ -21,7 +21,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityRole="tab"
         accessibilityLabel="Início"
         accessibilityState={{ selected: active === 'home' }}
-        onPress={() => router.replace('/stores')}
+        onPress={() => router.replace('/home')}
         style={styles.item}
       >
         <SymbolView
