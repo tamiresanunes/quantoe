@@ -8,16 +8,25 @@ import type { Category, StorePiece } from '@/types/models';
 
 export type StockAlert = 'exhausted' | 'low' | null;
 
+export function minimumStockForCategory(
+  category: Category,
+  preferences: StockPreferences = defaultStockPreferences(),
+) {
+  if (stockCategories.some((name) => name === category.name)) {
+    return preferences.minimumByCategory[category.name as StockCategory];
+  }
+  return category.minimumStock ?? preferences.defaultMinimum;
+}
+
 export function minimumStockForPiece(
   piece: StorePiece,
   categories: readonly Category[],
   preferences: StockPreferences = defaultStockPreferences(),
 ) {
   const category = categories.find((item) => item.id === piece.categoryId);
-  if (category && stockCategories.some((name) => name === category.name)) {
-    return preferences.minimumByCategory[category.name as StockCategory];
-  }
-  return category?.minimumStock ?? preferences.defaultMinimum;
+  return category
+    ? minimumStockForCategory(category, preferences)
+    : preferences.defaultMinimum;
 }
 
 export function stockAlertForPiece(
