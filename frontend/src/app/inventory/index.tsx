@@ -16,6 +16,7 @@ import { AppFeedback } from '@/components/app-feedback';
 import { useAuth } from '@/features/auth/auth-context';
 import type { Brand } from '@/features/brands/brand-types';
 import { InventoryPieceCard } from '@/features/inventory/inventory-piece-card';
+import { conditions } from '@/features/inventory/piece-attributes';
 import { stockAlertForPiece } from '@/features/inventory/stock-alerts';
 import {
   InventoryEmptyState,
@@ -32,9 +33,35 @@ import { mockCategoryService } from '@/services/mock/mock-category-service';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
-import type { Category, StorePiece } from '@/types/models';
+import type {
+  Category,
+  PieceCondition,
+  PieceStatus,
+  StorePiece,
+} from '@/types/models';
 
 const UNCATEGORIZED = '__uncategorized';
+const UNBRANDED = '__unbranded';
+const PENDING = '__pending';
+const alertFilters = ['alerts', 'low', 'exhausted'];
+const statuses: { value: PieceStatus; label: string }[] = [
+  { value: 'available', label: 'Livre' },
+  { value: 'reserved', label: 'Reservada' },
+  { value: 'clearance', label: 'Liquidação' },
+  { value: 'sold', label: 'Vendida' },
+];
+
+function parsePrice(value: string) {
+  if (!value.trim()) return null;
+  const input = value.trim();
+  const decimal = /^\d+(?:[.,]\d{0,2})?$/.test(input);
+  const grouped = /^\d{1,3}(?:\.\d{3})+(?:,\d{0,2})?$/.test(input);
+  if (!decimal && !grouped) return NaN;
+  const number = Number(
+    (grouped ? input.replace(/\./g, '') : input).replace(',', '.'),
+  );
+  return Number.isFinite(number) && number >= 0 ? number : NaN;
+}
 
 function normalize(value: string) {
   return value
@@ -67,7 +94,26 @@ export default function InventoryScreen() {
   const [loadedStoreId, setLoadedStoreId] = useState<string | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [query, setQuery] = useState(initialQuery ?? '');
-  const [filter, setFilter] = useState(initialFilter ?? 'all');
+  const [alertFilter, setAlertFilter] = useState(
+    initialFilter && alertFilters.includes(initialFilter)
+      ? initialFilter
+      : 'all',
+  );
+  const [categoryFilter, setCategoryFilter] = useState(
+    initialFilter && !['all', ...alertFilters].includes(initialFilter)
+      ? initialFilter
+      : 'all',
+  );
+  const [brandFilter, setBrandFilter] = useState('all');
+  const [conditionFilter, setConditionFilter] = useState<
+    'all' | PieceCondition
+  >('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | PieceStatus | typeof PENDING
+  >('all');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [view, setView] = useState<'pieces' | 'categories'>('pieces');
   const [priceOrder, setPriceOrder] = useState<'none' | 'asc' | 'desc'>('none');
 
@@ -118,10 +164,31 @@ export default function InventoryScreen() {
   const availableCategories = categories.filter((category) =>
     activePieces.some((piece) => piece.categoryId === category.id),
   );
+  const availableBrands = brands.filter((brand) =>
+    activePieces.some((piece) => piece.brandId === brand.id),
+  );
   const hasUncategorized = activePieces.some(
     (piece) => categoryKey(piece) === UNCATEGORIZED,
   );
+  const hasUnbranded = activePieces.some(
+    (piece) =>
+      !piece.brandId || !brands.some((brand) => brand.id === piece.brandId),
+  );
   const search = normalize(query.trim());
+  const minimum = parsePrice(minPrice);
+  const maximum = parsePrice(maxPrice);
+  const invalidPrice =
+    Number.isNaN(minimum) ||
+    Number.isNaN(maximum) ||
+    (minimum !== null && maximum !== null && minimum > maximum);
+  const activeFilterCount = [
+    alertFilter !== 'all',
+    categoryFilter !== 'all',
+    brandFilter !== 'all',
+    conditionFilter !== 'all',
+    statusFilter !== 'all',
+    minimum !== null || maximum !== null,
+  ].filter(Boolean).length;
   const visible = activePieces
     .filter((piece) => {
       const matchesSearch =
@@ -129,13 +196,41 @@ export default function InventoryScreen() {
         normalize(
           `${piece.name} ${piece.code ?? ''} ${brandName(piece)} ${categoryName(categoryKey(piece))}`,
         ).includes(search);
-      const matchesFilter =
-        filter === 'all' ||
-        (filter === 'alerts' && alertFor(piece) !== null) ||
-        (filter === 'low' && alertFor(piece) === 'low') ||
-        (filter === 'exhausted' && alertFor(piece) === 'exhausted') ||
-        categoryKey(piece) === filter;
-      return matchesSearch && matchesFilter;
+      const alert = alertFor(piece);
+      const matchesAlert =
+        alertFilter === 'all' ||
+        (alertFilter === 'alerts' && alert !== null) ||
+        alertFilter === alert;
+      const matchesCategory =
+        categoryFilter === 'all' || categoryKey(piece) === categoryFilter;
+      const matchesBrand =
+        brandFilter === 'all' ||
+        (brandFilter === UNBRANDED
+          ? !piece.brandId ||
+            !brands.some((brand) => brand.id === piece.brandId)
+          : piece.brandId === brandFilter);
+      const matchesCondition =
+        conditionFilter === 'all' || piece.condition === conditionFilter;
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === PENDING
+          ? !piece.status
+          : piece.status === statusFilter);
+      const matchesPrice =
+        !invalidPrice &&
+        (minimum === null ||
+          (piece.salePrice !== undefined && piece.salePrice >= minimum)) &&
+        (maximum === null ||
+          (piece.salePrice !== undefined && piece.salePrice <= maximum));
+      return (
+        matchesSearch &&
+        matchesAlert &&
+        matchesCategory &&
+        matchesBrand &&
+        matchesCondition &&
+        matchesStatus &&
+        matchesPrice
+      );
     })
     .sort((a, b) => {
       if (priceOrder === 'none') return 0;
@@ -150,15 +245,20 @@ export default function InventoryScreen() {
     ...(hasUncategorized ? [UNCATEGORIZED] : []),
   ].filter((key) => visible.some((piece) => categoryKey(piece) === key));
   const cardWidth = (contentWidth - 10) / 2;
-  const noMatchesTitle = query.trim()
-    ? 'Nenhuma peça encontrada'
-    : filter === 'alerts'
-      ? 'Nenhuma peça com alerta'
-      : filter === 'low'
-        ? 'Nenhuma peça com estoque baixo'
-        : filter === 'exhausted'
-          ? 'Nenhuma peça esgotada'
-          : 'Nenhuma peça nesta categoria';
+  const noMatchesTitle = invalidPrice
+    ? 'Faixa de preço inválida'
+    : 'Nenhuma peça encontrada';
+
+  function clearFilters() {
+    setQuery('');
+    setAlertFilter('all');
+    setCategoryFilter('all');
+    setBrandFilter('all');
+    setConditionFilter('all');
+    setStatusFilter('all');
+    setMinPrice('');
+    setMaxPrice('');
+  }
 
   function grid(pieces: StorePiece[]) {
     return (
@@ -177,17 +277,49 @@ export default function InventoryScreen() {
   }
 
   function chip(value: string, label: string) {
+    const isAlert = value === 'all' || alertFilters.includes(value);
+    const selected =
+      value === 'all'
+        ? activeFilterCount === 0 && !query.trim()
+        : isAlert
+          ? alertFilter === value
+          : categoryFilter === value;
     return (
       <Pressable
         key={value}
         accessibilityRole="button"
-        accessibilityState={{ selected: filter === value }}
-        onPress={() => setFilter(value)}
-        style={[s.chip, filter === value && s.chipActive]}
+        accessibilityState={{ selected }}
+        onPress={() => {
+          if (value === 'all') {
+            clearFilters();
+          } else if (isAlert) {
+            setAlertFilter(selected ? 'all' : value);
+          } else {
+            setCategoryFilter(selected ? 'all' : value);
+          }
+        }}
+        style={[s.chip, selected && s.chipActive]}
       >
-        <Text style={[s.chipText, filter === value && s.chipTextActive]}>
-          {label}
-        </Text>
+        <Text style={[s.chipText, selected && s.chipTextActive]}>{label}</Text>
+      </Pressable>
+    );
+  }
+
+  function optionChip(
+    value: string,
+    label: string,
+    selected: boolean,
+    onPress: () => void,
+  ) {
+    return (
+      <Pressable
+        key={value}
+        accessibilityRole="button"
+        accessibilityState={{ selected }}
+        onPress={onPress}
+        style={[s.chip, selected && s.chipActive]}
+      >
+        <Text style={[s.chipText, selected && s.chipTextActive]}>{label}</Text>
       </Pressable>
     );
   }
@@ -285,6 +417,164 @@ export default function InventoryScreen() {
                 {hasUncategorized ? chip(UNCATEGORIZED, 'Sem categoria') : null}
               </View>
             </ScrollView>
+            <View style={s.filterToolbar}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: filtersOpen }}
+                onPress={() => setFiltersOpen((open) => !open)}
+                style={s.filterToggle}
+              >
+                <SymbolView
+                  name={{
+                    ios: 'line.3.horizontal.decrease',
+                    android: 'tune',
+                    web: 'tune',
+                  }}
+                  size={15}
+                  tintColor={colors.action.primary}
+                />
+                <Text style={s.filterToggleText}>
+                  Filtros{activeFilterCount ? ` (${activeFilterCount})` : ''}
+                </Text>
+              </Pressable>
+              {query.trim() || activeFilterCount ? (
+                <Pressable accessibilityRole="button" onPress={clearFilters}>
+                  <Text style={s.clearText}>Limpar filtros</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            {filtersOpen ? (
+              <View style={s.filterPanel}>
+                <View style={s.filterGroup}>
+                  <Text style={s.filterLabel}>Categoria</Text>
+                  <View style={s.filterChoices}>
+                    {optionChip(
+                      'category-all',
+                      'Todas',
+                      categoryFilter === 'all',
+                      () => setCategoryFilter('all'),
+                    )}
+                    {availableCategories.map((category) =>
+                      optionChip(
+                        category.id,
+                        category.name,
+                        categoryFilter === category.id,
+                        () => setCategoryFilter(category.id),
+                      ),
+                    )}
+                    {hasUncategorized
+                      ? optionChip(
+                          UNCATEGORIZED,
+                          'Sem categoria',
+                          categoryFilter === UNCATEGORIZED,
+                          () => setCategoryFilter(UNCATEGORIZED),
+                        )
+                      : null}
+                  </View>
+                </View>
+                <View style={s.filterGroup}>
+                  <Text style={s.filterLabel}>Marca</Text>
+                  <View style={s.filterChoices}>
+                    {optionChip(
+                      'brand-all',
+                      'Todas',
+                      brandFilter === 'all',
+                      () => setBrandFilter('all'),
+                    )}
+                    {availableBrands.map((brand) =>
+                      optionChip(
+                        brand.id,
+                        brand.name,
+                        brandFilter === brand.id,
+                        () => setBrandFilter(brand.id),
+                      ),
+                    )}
+                    {hasUnbranded
+                      ? optionChip(
+                          UNBRANDED,
+                          'Sem marca',
+                          brandFilter === UNBRANDED,
+                          () => setBrandFilter(UNBRANDED),
+                        )
+                      : null}
+                  </View>
+                </View>
+                <View style={s.filterGroup}>
+                  <Text style={s.filterLabel}>Preço de venda (R$)</Text>
+                  <View style={s.priceRow}>
+                    <TextInput
+                      accessibilityLabel="Preço mínimo"
+                      keyboardType="decimal-pad"
+                      placeholder="Mínimo"
+                      placeholderTextColor={colors.text.auxiliary}
+                      value={minPrice}
+                      onChangeText={setMinPrice}
+                      style={s.priceInput}
+                    />
+                    <Text style={s.priceSeparator}>até</Text>
+                    <TextInput
+                      accessibilityLabel="Preço máximo"
+                      keyboardType="decimal-pad"
+                      placeholder="Máximo"
+                      placeholderTextColor={colors.text.auxiliary}
+                      value={maxPrice}
+                      onChangeText={setMaxPrice}
+                      style={s.priceInput}
+                    />
+                  </View>
+                  {invalidPrice ? (
+                    <Text style={s.priceError}>
+                      Informe valores válidos, com o mínimo menor ou igual ao
+                      máximo.
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={s.filterGroup}>
+                  <Text style={s.filterLabel}>Estado de conservação</Text>
+                  <View style={s.filterChoices}>
+                    {optionChip(
+                      'condition-all',
+                      'Todos',
+                      conditionFilter === 'all',
+                      () => setConditionFilter('all'),
+                    )}
+                    {conditions.map((condition) =>
+                      optionChip(
+                        condition.value,
+                        condition.label,
+                        conditionFilter === condition.value,
+                        () => setConditionFilter(condition.value),
+                      ),
+                    )}
+                  </View>
+                </View>
+                <View style={s.filterGroup}>
+                  <Text style={s.filterLabel}>Status</Text>
+                  <View style={s.filterChoices}>
+                    {optionChip(
+                      'status-all',
+                      'Todos',
+                      statusFilter === 'all',
+                      () => setStatusFilter('all'),
+                    )}
+                    {statuses.map((status) =>
+                      optionChip(
+                        status.value,
+                        status.label,
+                        statusFilter === status.value,
+                        () => setStatusFilter(status.value),
+                      ),
+                    )}
+                    {optionChip(
+                      PENDING,
+                      'Pendente',
+                      statusFilter === PENDING,
+                      () => setStatusFilter(PENDING),
+                    )}
+                  </View>
+                </View>
+              </View>
+            ) : null}
             <View style={s.viewSwitch}>
               <Pressable
                 accessibilityRole="button"
@@ -321,6 +611,12 @@ export default function InventoryScreen() {
         </View>
 
         <View style={[s.body, { width: contentWidth }]}>
+          {!loading && !optionsLoading && activePieces.length > 0 ? (
+            <Text style={s.resultCount}>
+              {visible.length}{' '}
+              {visible.length === 1 ? 'peça encontrada' : 'peças encontradas'}
+            </Text>
+          ) : null}
           {notice ? (
             <AppFeedback
               compact
@@ -363,12 +659,13 @@ export default function InventoryScreen() {
             <InventoryEmptyState
               icon="search"
               title={noMatchesTitle}
-              message="Tente outra busca ou volte a mostrar todas as peças."
+              message={
+                invalidPrice
+                  ? 'Ajuste os valores mínimo e máximo para pesquisar.'
+                  : 'Tente outra busca ou ajuste os filtros selecionados.'
+              }
               actionLabel="Limpar busca e filtros"
-              onAction={() => {
-                setQuery('');
-                setFilter('all');
-              }}
+              onAction={clearFilters}
             />
           ) : view === 'pieces' ? (
             grid(visible)
@@ -495,6 +792,63 @@ const s = StyleSheet.create({
     fontFamily: fontFamilies.sansSemiBold,
     color: colors.text.inverse,
   },
+  filterToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  filterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  filterToggleText: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 11,
+    color: colors.action.primary,
+  },
+  clearText: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 10,
+    color: colors.action.primary,
+  },
+  filterPanel: {
+    gap: 15,
+    padding: 13,
+    borderRadius: 17,
+    backgroundColor: colors.surface.primary,
+  },
+  filterGroup: { gap: 7 },
+  filterLabel: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 11,
+    color: colors.text.primary,
+  },
+  filterChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  priceInput: {
+    flex: 1,
+    minWidth: 0,
+    height: 38,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 12,
+    color: colors.text.primary,
+  },
+  priceSeparator: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 11,
+    color: colors.text.secondary,
+  },
+  priceError: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 10,
+    color: colors.semantic.error.foreground,
+  },
   viewSwitch: {
     flexDirection: 'row',
     alignSelf: 'flex-start',
@@ -514,6 +868,12 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   body: { maxWidth: 420, marginTop: -12, gap: 12 },
+  resultCount: {
+    alignSelf: 'flex-end',
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 10,
+    color: colors.text.secondary,
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   group: { gap: 9 },
   groupHeader: {
