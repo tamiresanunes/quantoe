@@ -57,6 +57,10 @@ function AppStack() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="profile/settings"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/preferences"

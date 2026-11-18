@@ -197,9 +197,13 @@ export default function StockPreferencesScreen() {
           <View style={[styles.hero, { height: heroHeight }]}>
             <View style={styles.header}>
               <Pressable
-                accessibilityLabel="Voltar para o perfil"
+                accessibilityLabel="Voltar"
                 accessibilityRole="button"
-                onPress={() => router.replace('/profile')}
+                onPress={() =>
+                  router.canGoBack()
+                    ? router.back()
+                    : router.replace('/profile')
+                }
                 style={styles.backButton}
               >
                 <SymbolView
