@@ -5,9 +5,7 @@ import { useState, type ComponentProps } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
-import { AppModal } from '@/components/app-modal';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useAuth } from '@/features/auth/auth-context';
 import { colors } from '@/theme/colors';
@@ -55,7 +53,6 @@ function SettingRow({
 export default function SettingsScreen() {
   const { contentWidth } = useResponsiveLayout();
   const { signOut } = useAuth();
-  const [helpOpen, setHelpOpen] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState('');
@@ -102,7 +99,7 @@ export default function SettingsScreen() {
         android: 'help_outline',
         web: 'help_outline',
       },
-      onPress: () => setHelpOpen(true),
+      onPress: () => router.push('/profile/help'),
     },
   ];
 
@@ -174,31 +171,6 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      <AppModal
-        visible={helpOpen}
-        title="Ajuda e suporte"
-        onClose={() => setHelpOpen(false)}
-      >
-        <Text style={s.helpText}>
-          Consulte suas peças no estoque e ajuste os limites de alerta nas
-          preferências de estoque.
-        </Text>
-        <AppButton
-          title="Ver estoque"
-          onPress={() => {
-            setHelpOpen(false);
-            router.push('/inventory');
-          }}
-        />
-        <AppButton
-          title="Preferências de estoque"
-          variant="secondary"
-          onPress={() => {
-            setHelpOpen(false);
-            router.push('/profile/preferences');
-          }}
-        />
-      </AppModal>
       <ConfirmDialog
         visible={confirmSignOut}
         title="Sair da conta?"
@@ -302,11 +274,5 @@ const s = StyleSheet.create({
     fontFamily: fontFamilies.sansRegular,
     fontSize: 10,
     color: colors.text.auxiliary,
-  },
-  helpText: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.text.secondary,
   },
 });
