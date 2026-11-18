@@ -15,7 +15,9 @@ import { fontFamilies } from '@/theme/typography';
 void SplashScreen.preventAutoHideAsync();
 
 function AppStack() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
 
   return (
     <Stack
