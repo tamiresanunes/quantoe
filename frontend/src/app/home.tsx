@@ -112,7 +112,9 @@ export default function HomeScreen() {
   const lowCount = alerts.filter((item) => item.kind === 'low').length;
   const alertSummary = inventoryAlerts(activePieces, categories, preferences);
   const alertCount =
-    alertSummary.idlePieces.length + alertSummary.lowCategories.length;
+    alerts.length +
+    alertSummary.idlePieces.length +
+    alertSummary.lowCategories.length;
   const isLoading =
     loading || (!!activeStore && loadedStoreId !== activeStore.id);
 
@@ -155,7 +157,7 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Ver peças com alerta"
+              accessibilityLabel="Abrir notificações"
               onPress={() => router.push('/alerts')}
               style={s.bell}
             >
@@ -309,7 +311,8 @@ export default function HomeScreen() {
                 <Text style={s.sectionTitle}>Peças com alerta</Text>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => router.push('/alerts')}
+                  accessibilityLabel="Ver todas as peças com alerta"
+                  onPress={() => openInventory('alerts')}
                 >
                   <Text style={s.seeAll}>Ver todas</Text>
                 </Pressable>

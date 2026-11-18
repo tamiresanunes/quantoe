@@ -10,6 +10,10 @@ import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { inventoryAlerts } from '@/features/inventory/inventory-alerts';
 import {
+  minimumStockForPiece,
+  stockAlertForPiece,
+} from '@/features/inventory/stock-alerts';
+import {
   defaultStockPreferences,
   type StockPreferences,
 } from '@/features/stores/stock-preferences';
@@ -19,7 +23,7 @@ import { mockCategoryService } from '@/services/mock/mock-category-service';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
-import type { Category } from '@/types/models';
+import type { Category, StorePiece } from '@/types/models';
 
 export default function AlertsScreen() {
   const { user } = useAuth();
@@ -77,8 +81,17 @@ export default function AlertsScreen() {
     categories,
     preferences,
   );
+  const stockPieces = activePieces
+    .map((piece) => ({
+      piece,
+      kind: stockAlertForPiece(piece, categories, preferences),
+    }))
+    .filter(
+      (item): item is { piece: StorePiece; kind: 'exhausted' | 'low' } =>
+        item.kind !== null,
+    );
   const loading = storeLoading || (!!key && loadedKey !== key);
-  const total = idlePieces.length + lowCategories.length;
+  const total = stockPieces.length + idlePieces.length + lowCategories.length;
 
   return (
     <SafeAreaView style={s.screen}>
@@ -103,7 +116,7 @@ export default function AlertsScreen() {
             </Pressable>
             <View style={s.heading}>
               <Text accessibilityRole="header" style={s.title}>
-                Alertas
+                Notificações
               </Text>
               <Text style={s.subtitle}>{activeStore?.name ?? 'Estoque'}</Text>
             </View>
@@ -142,8 +155,8 @@ export default function AlertsScreen() {
             />
           ) : total === 0 ? (
             <EmptyState
-              title="Nenhum alerta por agora"
-              message="As peças paradas e as categorias abaixo do mínimo aparecerão aqui."
+              title="Nenhuma notificação por agora"
+              message="Peças com alerta, peças paradas e categorias abaixo do mínimo aparecerão aqui."
               actionLabel="Ver estoque"
               onAction={() => router.push('/inventory')}
             />
@@ -157,7 +170,11 @@ export default function AlertsScreen() {
                     atenção
                   </Text>
                   <Text style={s.summaryMeta}>
-                    {idlePieces.length}{' '}
+                    {stockPieces.length}{' '}
+                    {stockPieces.length === 1
+                      ? 'peça com alerta'
+                      : 'peças com alerta'}{' '}
+                    · {idlePieces.length}{' '}
                     {idlePieces.length === 1 ? 'peça parada' : 'peças paradas'}{' '}
                     · {lowCategories.length}{' '}
                     {lowCategories.length === 1
@@ -165,6 +182,61 @@ export default function AlertsScreen() {
                       : 'categorias abaixo do mínimo'}
                   </Text>
                 </View>
+              </View>
+
+              <View style={s.section}>
+                <View style={s.cardTop}>
+                  <Text style={s.sectionTitle}>Peças com alerta</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Ver todas as peças com alerta"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/inventory',
+                        params: { filter: 'alerts' },
+                      })
+                    }
+                  >
+                    <Text style={s.cardLink}>Ver todas ›</Text>
+                  </Pressable>
+                </View>
+                {stockPieces.length ? (
+                  stockPieces.map(({ piece, kind }) => (
+                    <Pressable
+                      key={piece.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Ver ${piece.name}`}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/inventory/detail',
+                          params: { pieceId: piece.id },
+                        })
+                      }
+                      style={s.card}
+                    >
+                      <View style={s.cardTop}>
+                        <Text numberOfLines={1} style={s.cardTitle}>
+                          {piece.name}
+                        </Text>
+                        <Text
+                          style={
+                            kind === 'exhausted' ? s.overdueBadge : s.lowBadge
+                          }
+                        >
+                          {kind === 'exhausted' ? 'ESGOTADO' : 'ESTOQUE BAIXO'}
+                        </Text>
+                      </View>
+                      <Text style={s.cardMeta}>
+                        {piece.quantity ?? '—'} un · mínimo:{' '}
+                        {minimumStockForPiece(piece, categories, preferences)}{' '}
+                        un
+                      </Text>
+                      <Text style={s.cardLink}>Ver peça ›</Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <Text style={s.sectionEmpty}>Nenhuma peça com alerta.</Text>
+                )}
               </View>
 
               <View style={s.section}>

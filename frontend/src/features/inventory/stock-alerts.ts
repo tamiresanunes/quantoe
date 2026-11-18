@@ -34,7 +34,8 @@ export function stockAlertForPiece(
   categories: readonly Category[],
   preferences?: StockPreferences,
 ): StockAlert {
-  if (piece.quantity === 0 || piece.status === 'sold') return 'exhausted';
+  if (piece.status === 'sold') return null;
+  if (piece.quantity === 0) return 'exhausted';
   if (
     piece.quantity !== undefined &&
     piece.quantity <= minimumStockForPiece(piece, categories, preferences)

@@ -123,9 +123,11 @@ export default function StoresScreen() {
         <View style={[styles.hero, { minHeight: heroHeight }]}>
           <View style={styles.header}>
             <Pressable
-              accessibilityLabel="Voltar para o perfil"
+              accessibilityLabel="Voltar"
               accessibilityRole="button"
-              onPress={() => router.replace('/profile')}
+              onPress={() =>
+                router.canGoBack() ? router.back() : router.replace('/home')
+              }
               style={styles.backButton}
             >
               <View pointerEvents="none">

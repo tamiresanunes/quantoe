@@ -35,6 +35,8 @@ type Params = {
   style?: string;
   acquisitionPrice?: string;
   suggestedPrice?: string;
+  score?: string;
+  percent?: string;
 };
 
 const currency = (value: number) =>
@@ -56,6 +58,8 @@ export default function SuggestedPriceScreen() {
   const { contentWidth } = useResponsiveLayout();
   const suggested = Number(params.suggestedPrice);
   const cost = Number(params.acquisitionPrice);
+  const score = Number(params.score);
+  const appliedPercent = Number(params.percent);
   const [finalPrice, setFinalPrice] = useState(
     Number.isFinite(suggested) && suggested > 0
       ? suggested.toFixed(2).replace('.', ',')
@@ -73,14 +77,17 @@ export default function SuggestedPriceScreen() {
     Number.isFinite(cost) &&
     cost > 0 &&
     Number.isFinite(suggested) &&
-    suggested > 0;
+    suggested > 0 &&
+    Number.isInteger(score) &&
+    score >= 0 &&
+    [40, 70, 100, 140, 180].includes(appliedPercent);
   const conditionLabel = isPieceCondition(params.condition)
     ? conditionLabels[params.condition]
     : '—';
   const styleLabel = isPieceStyle(params.style)
     ? styleLabels[params.style]
     : '—';
-  const suggestedPercent = valid ? Math.round((suggested / cost - 1) * 100) : 0;
+  const suggestedPercent = valid ? appliedPercent : 0;
   const finalPercent =
     valid && amount !== null ? Math.round((amount / cost - 1) * 100) : null;
 
@@ -202,8 +209,16 @@ export default function SuggestedPriceScreen() {
                     <Text style={s.rowValue}>{currency(suggested)}</Text>
                   </View>
                   <View style={s.row}>
+                    <Text style={s.rowLabel}>Índice de valorização</Text>
+                    <Text style={s.rowValue}>{score} pontos</Text>
+                  </View>
+                  <View style={s.row}>
                     <Text style={s.rowLabel}>Valorização sugerida</Text>
                     <Text style={s.rowValue}>{suggestedPercent}%</Text>
+                  </View>
+                  <View style={s.row}>
+                    <Text style={s.rowLabel}>Lucro estimado</Text>
+                    <Text style={s.rowValue}>{currency(suggested - cost)}</Text>
                   </View>
                 </View>
 

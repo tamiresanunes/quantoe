@@ -71,17 +71,34 @@ function normalize(value: string) {
 }
 
 export default function InventoryScreen() {
-  const {
-    created,
-    priced,
-    query: initialQuery,
-    filter: initialFilter,
-  } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     created?: string;
     priced?: string;
     query?: string;
     filter?: string;
   }>();
+  return (
+    <InventoryContent
+      key={`${params.created}:${params.priced}:${params.query}:${params.filter}`}
+      created={params.created}
+      priced={params.priced}
+      initialQuery={params.query}
+      initialFilter={params.filter}
+    />
+  );
+}
+
+function InventoryContent({
+  created,
+  priced,
+  initialQuery,
+  initialFilter,
+}: {
+  created?: string;
+  priced?: string;
+  initialQuery?: string;
+  initialFilter?: string;
+}) {
   const { user } = useAuth();
   const { activeStore, activePieces, loading, error } = useStores();
   const { contentWidth } = useResponsiveLayout();

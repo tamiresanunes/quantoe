@@ -167,6 +167,8 @@ export default function PricePieceScreen() {
           style,
           acquisitionPrice: String(cost),
           suggestedPrice: String(pricing.suggestedPrice),
+          score: String(pricing.score),
+          percent: String(pricing.percent),
         },
       });
     } catch (cause) {
