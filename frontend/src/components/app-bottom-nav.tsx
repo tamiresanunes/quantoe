@@ -7,7 +7,7 @@ import { useResponsiveLayout } from '@/theme/responsive';
 import { fontFamilies } from '@/theme/typography';
 
 type AppBottomNavProps = {
-  active: 'home' | 'inventory' | 'pricing' | 'profile' | 'stores';
+  active: 'home' | 'inventory' | 'pricing' | 'reports' | 'profile' | 'stores';
 };
 
 export function AppBottomNav({ active }: AppBottomNavProps) {
@@ -81,18 +81,28 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
           Precificar
         </Text>
       </Pressable>
-      <View
+      <Pressable
+        accessibilityRole="tab"
+        accessibilityLabel="Relatórios"
+        accessibilityState={{ selected: active === 'reports' }}
+        onPress={() => router.replace('/reports')}
         style={styles.item}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
       >
         <SymbolView
           name={{ ios: 'chart.bar', android: 'bar_chart', web: 'bar_chart' }}
           size={19}
-          tintColor={colors.border.default}
+          tintColor={
+            active === 'reports'
+              ? colors.surface.selected
+              : colors.border.default
+          }
         />
-        <Text style={styles.label}>Relatórios</Text>
-      </View>
+        <Text
+          style={[styles.label, active === 'reports' && styles.activeLabel]}
+        >
+          Relatórios
+        </Text>
+      </Pressable>
       <Pressable
         accessibilityRole="tab"
         accessibilityLabel="Perfil"

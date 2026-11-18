@@ -75,10 +75,11 @@ function missingFields(
 }
 
 export default function PieceDetailScreen() {
-  const { pieceId, saved, priced } = useLocalSearchParams<{
+  const { pieceId, saved, priced, moved } = useLocalSearchParams<{
     pieceId?: string;
     saved?: string;
     priced?: string;
+    moved?: string;
   }>();
   const { user } = useAuth();
   const { activeStore, activePieces, loading } = useStores();
@@ -88,7 +89,10 @@ export default function PieceDetailScreen() {
   const [optionsReady, setOptionsReady] = useState(false);
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [notice, setNotice] = useState(
-    saved === 'created' || saved === 'updated' || priced === '1',
+    saved === 'created' ||
+      saved === 'updated' ||
+      priced === '1' ||
+      moved === '1',
   );
   const piece = activePieces.find((item) => item.id === pieceId);
 
@@ -203,11 +207,13 @@ export default function PieceDetailScreen() {
                   compact
                   variant="success"
                   title={
-                    priced === '1'
-                      ? 'Preço salvo com sucesso.'
-                      : saved === 'updated'
-                        ? 'Peça atualizada com sucesso.'
-                        : 'Peça cadastrada com sucesso.'
+                    moved === '1'
+                      ? 'Movimentação registrada com sucesso.'
+                      : priced === '1'
+                        ? 'Preço salvo com sucesso.'
+                        : saved === 'updated'
+                          ? 'Peça atualizada com sucesso.'
+                          : 'Peça cadastrada com sucesso.'
                   }
                   onDismiss={() => setNotice(false)}
                 />
@@ -333,6 +339,17 @@ export default function PieceDetailScreen() {
                 </View>
               ) : null}
               <View style={s.actions}>
+                <AppButton
+                  title="Movimentar"
+                  variant="secondary"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/inventory/move',
+                      params: { pieceId: piece.id },
+                    })
+                  }
+                  style={s.action}
+                />
                 <AppButton
                   title="Editar dados"
                   variant="secondary"

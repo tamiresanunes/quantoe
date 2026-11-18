@@ -23,6 +23,7 @@ import {
   stockAlertForPiece,
 } from '@/features/inventory/stock-alerts';
 import { inventoryAlerts } from '@/features/inventory/inventory-alerts';
+import { calculateInventoryIndicators } from '@/features/inventory/inventory-indicators';
 import {
   defaultStockPreferences,
   type StockPreferences,
@@ -90,10 +91,11 @@ export default function HomeScreen() {
   }, [ownerId, storeId]);
 
   const firstName = user?.name.trim().split(/\s+/)[0] || 'você';
-  const inventoryValue = activePieces.reduce((total, piece) => {
-    if (piece.status === 'sold' || piece.salePrice === undefined) return total;
-    return total + piece.salePrice * (piece.quantity ?? 1);
-  }, 0);
+  const inventoryIndicators = calculateInventoryIndicators(
+    activePieces,
+    categories,
+  );
+  const inventoryValue = inventoryIndicators.potentialSale;
   const alerts = activePieces
     .map((piece) => ({
       piece,
@@ -226,9 +228,9 @@ export default function HomeScreen() {
                 <Text style={s.valueLabel}>VALOR EM ESTOQUE</Text>
                 <Text style={s.value}>{currency(inventoryValue)}</Text>
                 <Text style={s.valueMeta}>
-                  {activePieces.length}{' '}
-                  {activePieces.length === 1 ? 'peça' : 'peças'}　 Vendas na
-                  semana: —
+                  {inventoryIndicators.totalPieces}{' '}
+                  {inventoryIndicators.totalPieces === 1 ? 'peça' : 'peças'}　
+                  Vendas na semana: —
                 </Text>
               </Pressable>
 
@@ -290,7 +292,7 @@ export default function HomeScreen() {
                     android: 'swap_horiz',
                     web: 'swap_horiz',
                   }}
-                  disabled
+                  onPress={() => router.push('/inventory/move')}
                 />
                 <QuickAction
                   label="Relatórios"
@@ -299,7 +301,7 @@ export default function HomeScreen() {
                     android: 'north_east',
                     web: 'north_east',
                   }}
-                  disabled
+                  onPress={() => router.push('/reports')}
                 />
               </View>
 
