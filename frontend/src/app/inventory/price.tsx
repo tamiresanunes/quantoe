@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
@@ -28,9 +29,11 @@ import {
 import { calculatePricing } from '@/features/inventory/pricing';
 import { useStores } from '@/features/stores/store-context';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { PieceCondition, PieceStyle, StorePiece } from '@/types/models';
 
 function parseMoney(value: string) {
@@ -47,7 +50,7 @@ export default function PricePieceScreen() {
   const { pieceId } = useLocalSearchParams<{ pieceId?: string }>();
   const { user } = useAuth();
   const { activeStore, activePieces, createQuickPiece } = useStores();
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, heroHeight } = useResponsiveLayout();
   const [mode, setMode] = useState<'stock' | 'quick'>('stock');
   const [selectedId, setSelectedId] = useState(pieceId ?? '');
   const [quickId, setQuickId] = useState('');
@@ -221,6 +224,7 @@ export default function PricePieceScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -246,7 +250,7 @@ export default function PricePieceScreen() {
                     android: 'history',
                     web: 'history',
                   }}
-                  size={18}
+                  size={layout.headerIcon}
                   tintColor={colors.text.primary}
                 />
               </Pressable>
@@ -313,10 +317,10 @@ export default function PricePieceScreen() {
                               s.pieceArt,
                               {
                                 backgroundColor: [
-                                  '#D6BAA7',
-                                  '#C78265',
-                                  '#E2B05E',
-                                  '#D9CABE',
+                                  colors.border.default,
+                                  colors.brand.clay,
+                                  colors.brand.cream,
+                                  colors.surface.selected,
                                 ][index % 4],
                               },
                             ]}
@@ -411,13 +415,12 @@ const s = StyleSheet.create({
   content: { alignItems: 'center', paddingBottom: 24 },
   hero: {
     width: '100%',
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: layout.screenTop,
     paddingBottom: 24,
-    gap: 26,
+    gap: layout.headerToCard,
   },
   header: {
     flexDirection: 'row',
@@ -426,13 +429,13 @@ const s = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   history: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -452,8 +455,9 @@ const s = StyleSheet.create({
   },
   toggleTextSelected: { fontFamily: fontFamilies.sansSemiBold },
   card: {
+    ...cardSurface,
     maxWidth: 440,
-    marginTop: 14,
+    marginTop: layout.screenContentGap,
     padding: 16,
     gap: 18,
     backgroundColor: colors.surface.primary,

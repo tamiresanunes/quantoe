@@ -12,14 +12,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
 import { isValidEmail } from '@/features/auth/validation';
 import { authService } from '@/services';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 export default function ForgotPasswordScreen() {
   const { compact, heroHeight, narrowCardWidth, cardPadding } =
@@ -62,9 +66,10 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.screen}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={styles.content}
@@ -85,7 +90,7 @@ export default function ForgotPasswordScreen() {
                       android: 'arrow_back',
                       web: 'arrow_back',
                     }}
-                    size={18}
+                    size={layout.headerIcon}
                     tintColor={colors.action.secondary}
                   />
                 </View>
@@ -179,24 +184,23 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingTop: layout.screenTop,
     paddingBottom: 24,
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface.primary,
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 21,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 27,
     color: colors.text.primary,
   },
@@ -209,6 +213,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   card: {
+    ...cardSurface,
     width: '88%',
     maxWidth: 404,
     alignSelf: 'center',

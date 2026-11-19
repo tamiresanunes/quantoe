@@ -13,11 +13,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { isValidEmail } from '@/features/auth/validation';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { useResponsiveLayout } from '@/theme/responsive';
@@ -64,9 +67,10 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.screen}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={styles.content}
@@ -239,7 +243,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
@@ -264,6 +267,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   card: {
+    ...cardSurface,
     width: '90%',
     maxWidth: 400,
     paddingHorizontal: 16,

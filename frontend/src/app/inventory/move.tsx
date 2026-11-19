@@ -13,14 +13,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useStores } from '@/features/stores/store-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 const entryReasons = [
   { value: 'purchase', label: 'Compra' },
@@ -43,7 +46,7 @@ export default function MovePieceScreen() {
     error: storeError,
     movePiece,
   } = useStores();
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, heroHeight } = useResponsiveLayout();
   const [selectedId, setSelectedId] = useState(pieceId ?? '');
   const [direction, setDirection] = useState<'in' | 'out'>('out');
   const [entryReason, setEntryReason] =
@@ -120,15 +123,15 @@ export default function MovePieceScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={s.screen}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={s.content}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={s.heroBackdrop} />
           <View style={[s.inner, { width: contentWidth }]}>
             <View style={s.header}>
               <Pressable
@@ -147,7 +150,7 @@ export default function MovePieceScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={18}
+                  size={layout.headerIcon}
                   tintColor={colors.action.primary}
                 />
               </Pressable>
@@ -407,27 +410,21 @@ export default function MovePieceScreen() {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
   content: { flexGrow: 1, alignItems: 'center', paddingBottom: 35 },
-  heroBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-    backgroundColor: colors.surface.selected,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+  inner: {
+    maxWidth: 420,
+    gap: layout.screenContentGap,
+    paddingTop: layout.screenTop,
   },
-  inner: { maxWidth: 420, gap: 15, paddingTop: 12 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
+    gap: layout.headerGap,
+    marginBottom: layout.headerToCard - layout.screenContentGap,
   },
   back: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -435,7 +432,7 @@ const s = StyleSheet.create({
   heading: { flex: 1 },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   subtitle: {
@@ -504,6 +501,7 @@ const s = StyleSheet.create({
   },
   switchTextActive: { color: colors.text.primary },
   quantityCard: {
+    ...cardSurface,
     minHeight: 75,
     paddingHorizontal: 13,
     borderRadius: 18,
@@ -544,6 +542,7 @@ const s = StyleSheet.create({
     color: colors.text.secondary,
   },
   card: {
+    ...cardSurface,
     gap: 9,
     padding: 13,
     borderRadius: 18,
@@ -587,6 +586,7 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   balance: {
+    ...cardSurface,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

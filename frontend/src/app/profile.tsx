@@ -11,12 +11,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { useAuth } from '@/features/auth/auth-context';
 import { useStores } from '@/features/stores/store-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 type SymbolName = ComponentProps<typeof SymbolView>['name'];
 type MenuItem = { label: string; icon: SymbolName; action: () => void };
@@ -72,6 +76,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { height: heroHeight }]}>
           <Text accessibilityRole="header" style={styles.pageTitle}>
@@ -185,19 +190,19 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 14,
-    paddingTop: 11,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
   },
   pageTitle: {
     fontFamily: fontFamilies.display,
-    fontSize: 21,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 29,
     color: colors.text.primary,
   },
   profileContent: { width: '90%', maxWidth: 420, gap: 13 },
   identityCard: {
+    ...cardSurface,
     minHeight: 75,
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,9 +252,9 @@ const styles = StyleSheet.create({
     lineHeight: 13,
   },
   menuGroup: {
+    ...cardSurface,
     borderRadius: 18,
     backgroundColor: colors.surface.primary,
-    overflow: 'hidden',
     shadowColor: colors.text.primary,
     shadowOpacity: 0.09,
     shadowRadius: 7,

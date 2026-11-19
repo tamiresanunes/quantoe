@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { EmptyState } from '@/components/empty-state';
@@ -26,8 +28,10 @@ import {
 import { useStores } from '@/features/stores/store-context';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
+import { layout } from '@/theme/spacing';
 import { fontFamilies } from '@/theme/typography';
 import type { Category, PieceStatus, StorePiece } from '@/types/models';
 
@@ -83,7 +87,7 @@ export default function PieceDetailScreen() {
   }>();
   const { user } = useAuth();
   const { activeStore, activePieces, loading } = useStores();
-  const { heroHeight, contentWidth } = useResponsiveLayout();
+  const { heroHeight, heroCardTop, contentWidth } = useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [optionsReady, setOptionsReady] = useState(false);
@@ -147,6 +151,7 @@ export default function PieceDetailScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView contentContainerStyle={s.content}>
         <View style={[s.hero, { height: heroHeight }]}>
           <View style={s.header}>
@@ -162,7 +167,7 @@ export default function PieceDetailScreen() {
                   android: 'arrow_back',
                   web: 'arrow_back',
                 }}
-                size={18}
+                size={layout.headerIcon}
                 tintColor={colors.action.secondary}
               />
             </Pressable>
@@ -189,7 +194,10 @@ export default function PieceDetailScreen() {
         </View>
 
         <View
-          style={[s.body, { width: contentWidth, marginTop: 86 - heroHeight }]}
+          style={[
+            s.body,
+            { width: contentWidth, marginTop: heroCardTop - heroHeight },
+          ]}
         >
           {loading || (piece && !optionsReady && !optionsError) ? (
             <LoadingState message="Carregando peça..." />
@@ -386,17 +394,16 @@ const s = StyleSheet.create({
   content: { alignItems: 'center', paddingBottom: 28, flexGrow: 1 },
   hero: {
     width: '100%',
-    paddingTop: 10,
+    paddingTop: layout.screenTop,
     paddingHorizontal: 16,
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
   header: { flexDirection: 'row', justifyContent: 'space-between' },
   roundButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -465,6 +472,7 @@ const s = StyleSheet.create({
   },
   metrics: { flexDirection: 'row', gap: 8 },
   metric: {
+    ...cardSurface,
     flex: 1,
     minWidth: 0,
     padding: 10,
@@ -489,6 +497,7 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   margin: {
+    ...cardSurface,
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 12,
@@ -501,6 +510,7 @@ const s = StyleSheet.create({
     color: colors.semantic.success.foreground,
   },
   details: {
+    ...cardSurface,
     borderRadius: 17,
     padding: 13,
     gap: 8,

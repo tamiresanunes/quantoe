@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppFeedback } from '@/components/app-feedback';
 import { EmptyState } from '@/components/empty-state';
@@ -12,9 +13,11 @@ import { useAuth } from '@/features/auth/auth-context';
 import { calculateInventoryIndicators } from '@/features/inventory/inventory-indicators';
 import { useStores } from '@/features/stores/store-context';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { Category } from '@/types/models';
 
 const currency = (value: number) =>
@@ -60,7 +63,7 @@ export default function ReportsScreen() {
     loading: storeLoading,
     error: storeError,
   } = useStores();
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, heroHeight } = useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadedOwnerId, setLoadedOwnerId] = useState('');
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
@@ -98,6 +101,7 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView contentContainerStyle={s.content}>
         <View style={s.hero}>
           <View style={[s.inner, { width: contentWidth }]}>
@@ -266,13 +270,12 @@ const s = StyleSheet.create({
   hero: {
     width: '100%',
     alignItems: 'center',
-    paddingTop: 13,
+    paddingTop: layout.screenTop,
     paddingBottom: 27,
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
-  inner: { maxWidth: 420, gap: 20 },
+  inner: { maxWidth: 420, gap: layout.screenContentGap },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -281,7 +284,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   subtitle: {
@@ -307,6 +310,7 @@ const s = StyleSheet.create({
   },
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   metricCard: {
+    ...cardSurface,
     width: '48%',
     minHeight: 88,
     padding: 12,
@@ -335,7 +339,11 @@ const s = StyleSheet.create({
     fontSize: 9,
     color: colors.text.auxiliary,
   },
-  body: { maxWidth: 420, gap: 12, marginTop: 15 },
+  body: {
+    maxWidth: 420,
+    gap: layout.screenContentGap,
+    marginTop: layout.screenContentGap,
+  },
   note: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 11,
@@ -349,7 +357,7 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fontFamilies.display,
-    fontSize: 19,
+    fontSize: fontSizes.sectionTitle,
     color: colors.text.primary,
   },
   sectionCount: {
@@ -358,6 +366,7 @@ const s = StyleSheet.create({
     color: colors.text.secondary,
   },
   categoryCard: {
+    ...cardSurface,
     borderRadius: 18,
     paddingHorizontal: 13,
     backgroundColor: colors.surface.primary,

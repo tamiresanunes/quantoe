@@ -13,6 +13,12 @@ export const spacing = {
 
 export const layout = {
   screenHorizontal: 20,
+  screenTop: 12,
+  screenContentGap: 16,
+  headerGap: 10,
+  headerToCard: 24,
+  headerButton: 36,
+  headerIcon: 18,
   sectionGap: spacing.lg,
   cardGap: spacing.sm,
   cardPadding: spacing.md,

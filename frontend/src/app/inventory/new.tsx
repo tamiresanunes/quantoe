@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
@@ -34,9 +36,11 @@ import { systemBrands } from '@/mocks/fixtures/brands';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
 import { storeService } from '@/services';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type {
   Category,
   PieceCondition,
@@ -95,7 +99,8 @@ export default function NewPieceScreen() {
   const editingPiece = editId
     ? activePieces.find((item) => item.id === editId)
     : undefined;
-  const { heroHeight, contentWidth, cardPadding } = useResponsiveLayout();
+  const { heroHeight, heroCardTop, contentWidth, cardPadding } =
+    useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [code, setCode] = useState('');
@@ -388,6 +393,7 @@ export default function NewPieceScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -418,7 +424,7 @@ export default function NewPieceScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={18}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </Pressable>
@@ -461,7 +467,7 @@ export default function NewPieceScreen() {
                   {
                     width: contentWidth,
                     padding: cardPadding,
-                    marginTop: 94 - heroHeight,
+                    marginTop: heroCardTop - heroHeight,
                   },
                 ]}
               >
@@ -838,23 +844,22 @@ const s = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   back: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface.primary,
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 22,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   storeName: {
@@ -863,6 +868,7 @@ const s = StyleSheet.create({
     color: colors.text.secondary,
   },
   card: {
+    ...cardSurface,
     maxWidth: 420,
     borderRadius: 19,
     gap: 16,

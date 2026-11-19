@@ -51,7 +51,7 @@ export const categoryColors = [
   { label: 'Terracota', value: colors.action.primary },
   { label: 'Oliva', value: colors.brand.olive },
   { label: 'Café', value: colors.brand.coffee },
-  { label: 'Verde', value: '#5B7B5B' },
-  { label: 'Ocre', value: '#D3973D' },
-  { label: 'Areia', value: '#C5A58F' },
+  { label: 'Verde', value: colors.categoryAccent.green },
+  { label: 'Ocre', value: colors.categoryAccent.ochre },
+  { label: 'Areia', value: colors.categoryAccent.sand },
 ] as const;

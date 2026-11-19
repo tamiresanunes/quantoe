@@ -20,9 +20,11 @@ import {
 import { useStores } from '@/features/stores/store-context';
 import { storeService } from '@/services';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { Category, StorePiece } from '@/types/models';
 
 export default function AlertsScreen() {
@@ -110,7 +112,7 @@ export default function AlertsScreen() {
                   android: 'arrow_back',
                   web: 'arrow_back',
                 }}
-                size={18}
+                size={layout.headerIcon}
                 tintColor={colors.text.primary}
               />
             </Pressable>
@@ -346,17 +348,21 @@ export default function AlertsScreen() {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
   content: { alignItems: 'center', paddingBottom: 32, flexGrow: 1 },
-  inner: { maxWidth: 420, gap: 18, paddingTop: 13 },
+  inner: {
+    maxWidth: 420,
+    gap: layout.screenContentGap,
+    paddingTop: layout.screenTop,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
-    marginBottom: 5,
+    gap: layout.headerGap,
+    marginBottom: layout.headerToCard - layout.screenContentGap,
   },
   back: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -364,7 +370,7 @@ const s = StyleSheet.create({
   heading: { flex: 1 },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   subtitle: {
@@ -381,6 +387,8 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   summary: {
+    ...cardSurface,
+    borderColor: colors.border.strong,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
@@ -408,7 +416,7 @@ const s = StyleSheet.create({
   section: { gap: 9 },
   sectionTitle: {
     fontFamily: fontFamilies.display,
-    fontSize: 20,
+    fontSize: fontSizes.sectionTitle,
     color: colors.text.primary,
   },
   sectionSubtitle: {
@@ -418,6 +426,7 @@ const s = StyleSheet.create({
     marginTop: -5,
   },
   card: {
+    ...cardSurface,
     gap: 9,
     padding: 14,
     borderRadius: 17,
@@ -458,6 +467,7 @@ const s = StyleSheet.create({
     paddingVertical: 4,
   },
   suggestion: {
+    ...cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,

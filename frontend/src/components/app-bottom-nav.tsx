@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 type AppBottomNavProps = {
   active: 'home' | 'inventory' | 'pricing' | 'reports' | 'profile' | 'stores';
@@ -150,8 +150,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: fontFamilies.sansRegular,
-    fontSize: 8,
-    lineHeight: 11,
+    fontSize: fontSizes.tabLabel,
+    lineHeight: 13,
     color: colors.border.default,
   },
   activeLabel: {

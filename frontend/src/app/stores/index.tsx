@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppFeedback } from '@/components/app-feedback';
@@ -20,9 +22,11 @@ import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { EditStoreModal } from '@/features/stores/edit-store-modal';
 import { useStores } from '@/features/stores/store-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { Store } from '@/types/models';
 
 type Notice = {
@@ -36,8 +40,7 @@ export default function StoresScreen() {
     storeCreated?: string;
     loggedIn?: string;
   }>();
-  const { compact, heroHeight, contentWidth } = useResponsiveLayout();
-  const listTop = compact ? 88 : 96;
+  const { heroHeight, heroCardTop, contentWidth } = useResponsiveLayout();
   const { user } = useAuth();
   const {
     stores,
@@ -119,6 +122,7 @@ export default function StoresScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { minHeight: heroHeight }]}>
           <View style={styles.header}>
@@ -137,7 +141,7 @@ export default function StoresScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={18}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </View>
@@ -177,7 +181,7 @@ export default function StoresScreen() {
         <View
           style={[
             styles.listArea,
-            { width: contentWidth, marginTop: listTop - heroHeight },
+            { width: contentWidth, marginTop: heroCardTop - heroHeight },
           ]}
         >
           {notice ? (
@@ -397,8 +401,7 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 20,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
@@ -409,16 +412,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface.primary,
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 21,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 28,
     color: colors.text.primary,
   },
@@ -440,6 +443,7 @@ const styles = StyleSheet.create({
   listArea: { width: '90%', maxWidth: 420, gap: 10 },
   noticeSlot: { marginBottom: 8 },
   storeCard: {
+    ...cardSurface,
     minHeight: 68,
     paddingHorizontal: 11,
     paddingVertical: 10,
@@ -511,6 +515,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   activeSummary: {
+    ...cardSurface,
     marginTop: 12,
     padding: 16,
     borderRadius: 17,

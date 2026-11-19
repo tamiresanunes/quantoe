@@ -4,9 +4,12 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 const questions = [
   {
@@ -32,12 +35,12 @@ const questions = [
 ] as const;
 
 export default function HelpScreen() {
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, heroHeight } = useResponsiveLayout();
   const [expanded, setExpanded] = useState<number | null>(null);
 
   return (
     <SafeAreaView style={s.screen}>
-      <View style={s.heroBackdrop} />
+      <FixedTopBand height={heroHeight} />
       <ScrollView contentContainerStyle={s.content}>
         <View style={[s.inner, { width: contentWidth }]}>
           <View style={s.header}>
@@ -57,7 +60,7 @@ export default function HelpScreen() {
                   android: 'arrow_back',
                   web: 'arrow_back',
                 }}
-                size={18}
+                size={layout.headerIcon}
                 tintColor={colors.action.primary}
               />
             </Pressable>
@@ -133,38 +136,33 @@ export default function HelpScreen() {
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
-  heroBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 292,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    backgroundColor: colors.surface.selected,
-  },
   content: { alignItems: 'center', flexGrow: 1, paddingBottom: 32 },
-  inner: { maxWidth: 420, gap: 13, paddingTop: 11 },
+  inner: {
+    maxWidth: 420,
+    gap: layout.screenContentGap,
+    paddingTop: layout.screenTop,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
-    marginBottom: 15,
+    gap: layout.headerGap,
+    marginBottom: layout.headerToCard - layout.screenContentGap,
   },
   back: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   faqCard: {
+    ...cardSurface,
     borderRadius: 18,
     paddingHorizontal: 8,
     backgroundColor: colors.surface.primary,
@@ -198,6 +196,7 @@ const s = StyleSheet.create({
     color: colors.text.secondary,
   },
   supportCard: {
+    ...cardSurface,
     alignItems: 'center',
     gap: 5,
     padding: 13,

@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { layout, radii, spacing } from '@/theme/spacing';
 
@@ -38,6 +39,7 @@ export function AppCard({
 
 const styles = StyleSheet.create({
   card: {
+    ...cardSurface,
     backgroundColor: colors.surface.primary,
     borderWidth: 1,
     borderColor: colors.border.default,

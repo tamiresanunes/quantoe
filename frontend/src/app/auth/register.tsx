@@ -14,20 +14,22 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { isValidEmail } from '@/features/auth/validation';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { layout, spacing } from '@/theme/spacing';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 export default function RegisterScreen() {
-  const { compact, heroHeight, authCardWidth, cardPadding } =
+  const { heroHeight, heroCardTop, authCardWidth, cardPadding } =
     useResponsiveLayout();
-  const cardTop = compact ? 90 : 104;
   const { signUp } = useAuth();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -115,9 +117,10 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.screen}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={styles.content}
@@ -138,7 +141,7 @@ export default function RegisterScreen() {
                       android: 'arrow_back',
                       web: 'arrow_back',
                     }}
-                    size={18}
+                    size={layout.headerIcon}
                     tintColor={colors.action.secondary}
                   />
                 </View>
@@ -156,7 +159,7 @@ export default function RegisterScreen() {
               {
                 width: authCardWidth,
                 paddingHorizontal: cardPadding,
-                marginTop: cardTop - heroHeight,
+                marginTop: heroCardTop - heroHeight,
               },
             ]}
           >
@@ -368,9 +371,8 @@ const styles = StyleSheet.create({
   },
   hero: {
     width: '100%',
-    paddingTop: 40,
+    paddingTop: layout.screenTop,
     paddingHorizontal: 17,
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
@@ -380,16 +382,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface.primary,
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 20,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 26,
     color: colors.text.primary,
   },
@@ -402,6 +404,7 @@ const styles = StyleSheet.create({
     color: colors.action.secondary,
   },
   card: {
+    ...cardSurface,
     width: '90%',
     maxWidth: 400,
     paddingHorizontal: 16,
