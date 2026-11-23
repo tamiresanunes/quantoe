@@ -103,7 +103,7 @@ export default function AlertsScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Voltar"
-              onPress={() => router.back()}
+              onPress={() => router.replace('/home')}
               style={s.back}
             >
               <SymbolView
@@ -150,8 +150,8 @@ export default function AlertsScreen() {
             />
           ) : !activeStore ? (
             <EmptyState
-              title="Nenhuma loja ativa"
-              message="Selecione uma loja para acompanhar os alertas."
+              title="Nenhuma notificação por agora"
+              message="Ative uma loja para acompanhar alertas de estoque e peças paradas."
               actionLabel="Ver minhas lojas"
               onAction={() => router.push('/stores')}
             />

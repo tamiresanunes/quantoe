@@ -22,7 +22,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityLabel="Início"
         accessibilityState={{ selected: active === 'home' }}
         onPress={() => router.replace('/home')}
-        style={styles.item}
+        style={[styles.item, active === 'home' && styles.activeItem]}
       >
         <SymbolView
           name={{ ios: 'house', android: 'home', web: 'home' }}
@@ -40,7 +40,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityLabel="Estoque"
         accessibilityState={{ selected: active === 'inventory' }}
         onPress={() => router.replace('/inventory')}
-        style={styles.item}
+        style={[styles.item, active === 'inventory' && styles.activeItem]}
       >
         <SymbolView
           name={{
@@ -62,7 +62,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         </Text>
       </Pressable>
       <Pressable
-        style={styles.item}
+        style={[styles.item, active === 'pricing' && styles.activeItem]}
         accessibilityRole="tab"
         accessibilityLabel="Precificar"
         accessibilityState={{ selected: active === 'pricing' }}
@@ -86,7 +86,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityLabel="Relatórios"
         accessibilityState={{ selected: active === 'reports' }}
         onPress={() => router.replace('/reports')}
-        style={styles.item}
+        style={[styles.item, active === 'reports' && styles.activeItem]}
       >
         <SymbolView
           name={{ ios: 'chart.bar', android: 'bar_chart', web: 'bar_chart' }}
@@ -108,7 +108,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityLabel="Perfil"
         accessibilityState={{ selected: active === 'profile' }}
         onPress={() => router.replace('/profile')}
-        style={styles.item}
+        style={[styles.item, active === 'profile' && styles.activeItem]}
       >
         <View style={active === 'profile' && styles.profileIcon}>
           <SymbolView
@@ -147,6 +147,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    borderRadius: 16,
+  },
+  activeItem: {
+    minHeight: 50,
+    marginHorizontal: 3,
+    backgroundColor: '#48433E',
+    transform: [{ scale: 1.06 }],
   },
   label: {
     fontFamily: fontFamilies.sansRegular,

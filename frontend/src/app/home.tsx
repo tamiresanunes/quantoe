@@ -160,7 +160,7 @@ export default function HomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Abrir notificações"
-              onPress={() => router.push('/alerts')}
+              onPress={() => router.navigate('/alerts')}
               style={s.bell}
             >
               <SymbolView
