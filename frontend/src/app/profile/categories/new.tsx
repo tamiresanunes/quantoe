@@ -35,8 +35,17 @@ import type { CategoryIcon } from '@/types/models';
 
 export default function NewCategoryScreen() {
   const { fromPiece } = useLocalSearchParams<{ fromPiece?: string }>();
-  const goBack = () =>
-    fromPiece === '1' ? router.back() : router.replace('/profile/categories');
+  const goBack = () => {
+    if (fromPiece === '1') {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/inventory/new');
+      }
+      return;
+    }
+    router.replace('/profile/categories');
+  };
   const { user } = useAuth();
   const { heroHeight, heroCardTop, contentWidth, cardPadding } =
     useResponsiveLayout();
@@ -72,12 +81,14 @@ export default function NewCategoryScreen() {
         minimumStock: Number(minimumStock.trim()),
         description,
       });
-      if (fromPiece === '1') router.back();
-      else
+      if (fromPiece === '1') {
+        goBack();
+      } else {
         router.replace({
           pathname: '/profile/categories',
           params: { created: '1' },
         });
+      }
     } catch (cause) {
       if (cause instanceof CategoryNameError) {
         setNameError(cause.message);
