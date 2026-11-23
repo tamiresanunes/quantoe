@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
@@ -27,9 +29,11 @@ import {
   type StockPreferences,
 } from '@/features/stores/stock-preferences';
 import { storeService } from '@/services';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 type PreferencesDraft = {
   defaultMinimum: string;
@@ -65,9 +69,8 @@ function validNumber(value: string, min: number, max: number) {
 }
 
 export default function StockPreferencesScreen() {
-  const { compact, heroHeight, contentWidth, cardPadding } =
+  const { heroHeight, heroCardTop, contentWidth, cardPadding } =
     useResponsiveLayout();
-  const cardTop = compact ? 90 : 104;
   const { user } = useAuth();
   const { activeStore, loading: storesLoading } = useStores();
   const ownerId = user?.id;
@@ -186,9 +189,10 @@ export default function StockPreferencesScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.screen}
+        style={{ flex: 1 }}
       >
         <ScrollView
           keyboardShouldPersistTaps="handled"
@@ -197,9 +201,13 @@ export default function StockPreferencesScreen() {
           <View style={[styles.hero, { height: heroHeight }]}>
             <View style={styles.header}>
               <Pressable
-                accessibilityLabel="Voltar para o perfil"
+                accessibilityLabel="Voltar"
                 accessibilityRole="button"
-                onPress={() => router.replace('/profile')}
+                onPress={() =>
+                  router.canGoBack()
+                    ? router.back()
+                    : router.replace('/profile')
+                }
                 style={styles.backButton}
               >
                 <SymbolView
@@ -208,7 +216,7 @@ export default function StockPreferencesScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={18}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </Pressable>
@@ -227,7 +235,7 @@ export default function StockPreferencesScreen() {
               {
                 width: contentWidth,
                 padding: cardPadding,
-                marginTop: cardTop - heroHeight,
+                marginTop: heroCardTop - heroHeight,
               },
             ]}
           >
@@ -413,17 +421,16 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, alignItems: 'center', paddingBottom: 28 },
   hero: {
     width: '100%',
-    paddingTop: 11,
+    paddingTop: layout.screenTop,
     paddingHorizontal: 14,
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 23,
     borderBottomRightRadius: 23,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -431,7 +438,7 @@ const styles = StyleSheet.create({
   heading: { gap: 1 },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 21,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 27,
     color: colors.text.primary,
   },
@@ -443,6 +450,7 @@ const styles = StyleSheet.create({
     color: colors.action.secondary,
   },
   card: {
+    ...cardSurface,
     maxWidth: 420,
     gap: 15,
     borderRadius: 19,
@@ -473,7 +481,7 @@ const styles = StyleSheet.create({
   input: { minHeight: 33, fontFamily: fontFamilies.sansRegular, fontSize: 11 },
   sectionTitle: {
     fontFamily: fontFamilies.display,
-    fontSize: 17,
+    fontSize: fontSizes.sectionTitle,
     lineHeight: 22,
     color: colors.text.primary,
     marginTop: 2,

@@ -5,6 +5,10 @@ import { mockStorePieces } from '@/mocks/fixtures/store-pieces';
 import { citiesByState, states } from '@/features/stores/brazil-locations';
 import { pieceDraftKey } from '@/features/inventory/piece-draft';
 import {
+  isPieceCondition,
+  isPieceStyle,
+} from '@/features/inventory/piece-attributes';
+import {
   defaultStockPreferences,
   isValidStockPreferences,
   type StockPreferences,
@@ -12,6 +16,8 @@ import {
 import type {
   CreatePieceInput,
   CreateStoreInput,
+  MovePieceInput,
+  PricingPieceInput,
   StoreService,
 } from '@/services/contracts/store-service';
 import { mockAuthService } from '@/services/mock/mock-auth-service';
@@ -84,13 +90,9 @@ function validatePiece(input: CreatePieceInput) {
     throw new Error('Informe o nome da peça com até 80 caracteres.');
   if (!input.categoryId) throw new Error('Selecione uma categoria.');
   if (!input.brandId) throw new Error('Selecione uma marca.');
-  if (!['new', 'excellent', 'good', 'fair', 'worn'].includes(input.condition))
+  if (!isPieceCondition(input.condition))
     throw new Error('Selecione um estado de conservação válido.');
-  if (
-    !['casual', 'social', 'vintage', 'beach', 'winter', 'other'].includes(
-      input.style,
-    )
-  )
+  if (!isPieceStyle(input.style))
     throw new Error('Selecione um estilo válido.');
   if (!['available', 'reserved', 'clearance', 'sold'].includes(input.status))
     throw new Error('Selecione um status válido.');
@@ -124,6 +126,18 @@ function validatePiece(input: CreatePieceInput) {
     input.notes.length > 500
   )
     throw new Error('Confira o tamanho dos campos da peça.');
+}
+
+function validatePricing(input: PricingPieceInput) {
+  if (!input.brandId) throw new Error('Selecione uma marca.');
+  if (!isPieceCondition(input.condition))
+    throw new Error('Selecione um estado de conservação válido.');
+  if (!isPieceStyle(input.style))
+    throw new Error('Selecione um estilo válido.');
+  if (!Number.isFinite(input.acquisitionPrice) || input.acquisitionPrice < 0)
+    throw new Error('Informe um valor de aquisição válido.');
+  if (!Number.isFinite(input.salePrice) || input.salePrice <= 0)
+    throw new Error('Informe um preço de venda válido.');
 }
 
 function clonePreferences(preferences: StockPreferences): StockPreferences {
@@ -212,6 +226,66 @@ export const mockStoreService: StoreService = {
     }
     return { ...piece };
   },
+  async createQuickPiece(ownerId, storeId, name, input) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    if (!name.trim() || name.trim().length > 80)
+      throw new Error('Informe o nome da peça com até 80 caracteres.');
+    validatePricing(input);
+    const saved = await readStoredPieces(ownerId, storeId);
+    const sequence = (await readSequence(ownerId)) + 1;
+    const piece: StorePiece = {
+      id: `piece-${ownerId}-${sequence}`,
+      storeId,
+      categoryId: '',
+      name: name.trim(),
+      code: formatPieceCode(sequence),
+      brandId: input.brandId,
+      condition: input.condition,
+      style: input.style,
+      acquisitionPrice: input.acquisitionPrice,
+    };
+    try {
+      await AsyncStorage.setItem(sequenceKey(ownerId), String(sequence));
+      await AsyncStorage.setItem(
+        pieceKey(ownerId, storeId),
+        JSON.stringify([...saved, piece]),
+      );
+    } catch {
+      throw new Error('Não foi possível cadastrar a peça avulsa.');
+    }
+    return { ...piece };
+  },
+  async pricePiece(ownerId, storeId, pieceId, input) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    validatePricing(input);
+    const saved = await readStoredPieces(ownerId, storeId);
+    const sampleIndex = mockStorePieces.findIndex(
+      (piece) => piece.storeId === storeId && piece.id === pieceId,
+    );
+    const previous =
+      saved.find((piece) => piece.id === pieceId) ??
+      mockStorePieces[sampleIndex];
+    if (!previous) throw new Error('Peça não encontrada nesta loja.');
+    const updated: StorePiece = {
+      ...previous,
+      ...input,
+      code: previous.code ?? formatPieceCode(sampleIndex + 1),
+    };
+    const next = saved.some((piece) => piece.id === pieceId)
+      ? saved.map((piece) => (piece.id === pieceId ? updated : piece))
+      : [...saved, updated];
+    try {
+      await AsyncStorage.setItem(
+        pieceKey(ownerId, storeId),
+        JSON.stringify(next),
+      );
+    } catch {
+      throw new Error('Não foi possível salvar o preço da peça.');
+    }
+    return { ...updated };
+  },
   async updatePiece(ownerId, storeId, pieceId, input) {
     await requireOwner(ownerId);
     requireStore(ownerId, storeId);
@@ -263,8 +337,8 @@ export const mockStoreService: StoreService = {
       !target.name.trim() ||
       !target.categoryId ||
       !target.brandId ||
-      !target.condition ||
-      !target.style ||
+      !isPieceCondition(target.condition) ||
+      !isPieceStyle(target.style) ||
       !target.status ||
       target.acquisitionPrice === undefined ||
       !Number.isFinite(target.acquisitionPrice) ||
@@ -294,6 +368,81 @@ export const mockStoreService: StoreService = {
       );
     } catch {
       throw new Error('Não foi possível salvar o preço da peça.');
+    }
+    return { ...updated };
+  },
+  async movePiece(ownerId, storeId, pieceId, input: MovePieceInput) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    if (
+      !Number.isInteger(input.quantity) ||
+      input.quantity < 1 ||
+      input.quantity > 999_999
+    )
+      throw new Error('Informe uma quantidade válida.');
+    if (input.note.trim().length > 500)
+      throw new Error('Use até 500 caracteres na observação.');
+    const validReasons =
+      input.direction === 'in'
+        ? ['purchase', 'return', 'adjustment']
+        : ['sale', 'exchange', 'damage', 'adjustment'];
+    if (!validReasons.includes(input.reason))
+      throw new Error('Selecione um motivo válido.');
+
+    const saved = await readStoredPieces(ownerId, storeId);
+    const sampleIndex = mockStorePieces.findIndex(
+      (piece) => piece.storeId === storeId && piece.id === pieceId,
+    );
+    const target =
+      saved.find((piece) => piece.id === pieceId) ??
+      mockStorePieces[sampleIndex];
+    if (!target || target.storeId !== storeId)
+      throw new Error('Peça não encontrada nesta loja.');
+    const current = target.quantity ?? 0;
+    if (!Number.isInteger(current) || current < 0)
+      throw new Error('O saldo atual desta peça está inválido.');
+    const next =
+      current + (input.direction === 'in' ? input.quantity : -input.quantity);
+    if (next < 0) throw new Error('A saída não pode superar o saldo atual.');
+    if (next > 999_999)
+      throw new Error('O saldo não pode superar 999.999 unidades.');
+
+    const updated: StorePiece = {
+      ...target,
+      code: target.code ?? formatPieceCode(sampleIndex + 1),
+      quantity: next,
+      status:
+        input.direction === 'in' && target.status === 'sold'
+          ? 'available'
+          : input.direction === 'out' && input.reason === 'sale' && next === 0
+            ? 'sold'
+            : target.status,
+      movements: [
+        ...(target.movements ?? []),
+        {
+          id: `movement-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          direction: input.direction,
+          quantity: input.quantity,
+          reason: input.reason,
+          note: input.note.trim(),
+          createdAt: new Date().toISOString(),
+          balanceAfter: next,
+        },
+      ],
+    };
+    try {
+      await AsyncStorage.setItem(
+        pieceKey(ownerId, storeId),
+        JSON.stringify(
+          saved.some((piece) => piece.id === pieceId)
+            ? saved.map((piece) => (piece.id === pieceId ? updated : piece))
+            : [...saved, updated],
+        ),
+      );
+    } catch {
+      throw new Error(
+        'Não foi possível salvar a movimentação neste dispositivo.',
+      );
     }
     return { ...updated };
   },

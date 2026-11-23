@@ -13,6 +13,12 @@ export const spacing = {
 
 export const layout = {
   screenHorizontal: 20,
+  screenTop: 24,
+  screenContentGap: 16,
+  headerGap: 10,
+  headerToCard: 24,
+  headerButton: 36,
+  headerIcon: 18,
   sectionGap: spacing.lg,
   cardGap: spacing.sm,
   cardPadding: spacing.md,
@@ -22,16 +28,16 @@ export const layout = {
 } as const;
 
 export const componentSizes = {
-  button: 52,
-  buttonSmall: 40,
-  field: 52,
+  button: 38,
+  buttonSmall: 38,
+  field: 36,
   touchTarget: 48,
   icon: 24,
 } as const;
 
 export const radii = {
   button: 12,
-  field: 10,
+  field: 14,
   card: 16,
   modal: 24,
 } as const;

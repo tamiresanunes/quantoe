@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -20,9 +22,11 @@ import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { Category } from '@/types/models';
 
 type Notice = { variant: 'success' | 'error'; title: string; message?: string };
@@ -30,7 +34,7 @@ type Notice = { variant: 'success' | 'error'; title: string; message?: string };
 export default function CategoriesScreen() {
   const { created } = useLocalSearchParams<{ created?: string }>();
   const { user } = useAuth();
-  const { compact, heroHeight, contentWidth } = useResponsiveLayout();
+  const { heroHeight, heroCardTop, contentWidth } = useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -158,6 +162,7 @@ export default function CategoriesScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -181,7 +186,7 @@ export default function CategoriesScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={17}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </Pressable>
@@ -215,7 +220,7 @@ export default function CategoriesScreen() {
               styles.listArea,
               {
                 width: contentWidth,
-                marginTop: (compact ? 92 : 98) - heroHeight,
+                marginTop: heroCardTop - heroHeight,
               },
             ]}
           >
@@ -424,16 +429,15 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 11,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -441,7 +445,7 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 20,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 26,
     color: colors.text.primary,
   },
@@ -482,6 +486,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryCard: {
+    ...cardSurface,
     overflow: 'hidden',
     borderRadius: 17,
     backgroundColor: colors.surface.primary,

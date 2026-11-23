@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
@@ -24,17 +26,28 @@ import {
   CategoryNameError,
   mockCategoryService,
 } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { CategoryIcon } from '@/types/models';
 
 export default function NewCategoryScreen() {
   const { fromPiece } = useLocalSearchParams<{ fromPiece?: string }>();
-  const goBack = () =>
-    fromPiece === '1' ? router.back() : router.replace('/profile/categories');
+  const goBack = () => {
+    if (fromPiece === '1') {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/inventory/new');
+      }
+      return;
+    }
+    router.replace('/profile/categories');
+  };
   const { user } = useAuth();
-  const { compact, heroHeight, contentWidth, cardPadding } =
+  const { heroHeight, heroCardTop, contentWidth, cardPadding } =
     useResponsiveLayout();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<CategoryIcon>('clothing');
@@ -68,12 +81,14 @@ export default function NewCategoryScreen() {
         minimumStock: Number(minimumStock.trim()),
         description,
       });
-      if (fromPiece === '1') router.back();
-      else
+      if (fromPiece === '1') {
+        goBack();
+      } else {
         router.replace({
           pathname: '/profile/categories',
           params: { created: '1' },
         });
+      }
     } catch (cause) {
       if (cause instanceof CategoryNameError) {
         setNameError(cause.message);
@@ -87,6 +102,7 @@ export default function NewCategoryScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -110,7 +126,7 @@ export default function NewCategoryScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={17}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </Pressable>
@@ -129,7 +145,7 @@ export default function NewCategoryScreen() {
               {
                 width: contentWidth,
                 padding: cardPadding,
-                marginTop: (compact ? 100 : 104) - heroHeight,
+                marginTop: heroCardTop - heroHeight,
               },
             ]}
           >
@@ -298,16 +314,15 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 11,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -315,7 +330,7 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 20,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 26,
     color: colors.text.primary,
   },
@@ -327,6 +342,7 @@ const styles = StyleSheet.create({
     color: colors.action.secondary,
   },
   card: {
+    ...cardSurface,
     maxWidth: 420,
     gap: 16,
     borderRadius: 20,

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState, type ComponentProps } from 'react';
+import { type ComponentProps } from 'react';
 import {
   Image,
   Pressable,
@@ -11,14 +11,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppBottomNav } from '@/components/app-bottom-nav';
-import { AppButton } from '@/components/app-button';
-import { AppModal } from '@/components/app-modal';
 import { useAuth } from '@/features/auth/auth-context';
 import { useStores } from '@/features/stores/store-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 type SymbolName = ComponentProps<typeof SymbolView>['name'];
 type MenuItem = { label: string; icon: SymbolName; action: () => void };
@@ -61,9 +63,8 @@ function MenuGroup({ items }: { items: MenuItem[] }) {
 
 export default function ProfileScreen() {
   const { heroHeight, contentWidth } = useResponsiveLayout();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { stores, activeStore } = useStores();
-  const [openSection, setOpenSection] = useState<string | null>(null);
   const storeCount = stores.length;
   const storeSummary = activeStore
     ? `${activeStore.name} · ${storeCount} ${storeCount === 1 ? 'loja' : 'lojas'}`
@@ -75,6 +76,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { height: heroHeight }]}>
           <Text accessibilityRole="header" style={styles.pageTitle}>
@@ -170,35 +172,13 @@ export default function ProfileScreen() {
                   android: 'settings',
                   web: 'settings',
                 },
-                action: () => setOpenSection('Configurações'),
+                action: () => router.push('/profile/settings'),
               },
             ]}
           />
         </View>
       </ScrollView>
       <AppBottomNav active="profile" />
-      <AppModal
-        visible={openSection !== null}
-        title={openSection || ''}
-        onClose={() => setOpenSection(null)}
-        titleStyle={styles.modalTitle}
-      >
-        {openSection === 'Configurações' ? (
-          <AppButton
-            title="Sair da conta"
-            variant="secondary"
-            onPress={async () => {
-              await signOut();
-              setOpenSection(null);
-              router.replace('/auth/login');
-            }}
-          />
-        ) : (
-          <Text style={styles.comingSoon}>
-            Esta seção estará disponível em breve.
-          </Text>
-        )}
-      </AppModal>
     </SafeAreaView>
   );
 }
@@ -210,19 +190,19 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 14,
-    paddingTop: 11,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
   },
   pageTitle: {
     fontFamily: fontFamilies.display,
-    fontSize: 21,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 29,
     color: colors.text.primary,
   },
   profileContent: { width: '90%', maxWidth: 420, gap: 13 },
   identityCard: {
+    ...cardSurface,
     minHeight: 75,
     flexDirection: 'row',
     alignItems: 'center',
@@ -272,9 +252,9 @@ const styles = StyleSheet.create({
     lineHeight: 13,
   },
   menuGroup: {
+    ...cardSurface,
     borderRadius: 18,
     backgroundColor: colors.surface.primary,
-    overflow: 'hidden',
     shadowColor: colors.text.primary,
     shadowOpacity: 0.09,
     shadowRadius: 7,
@@ -302,12 +282,5 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.sansMedium,
     fontSize: 11,
     color: colors.text.primary,
-  },
-  modalTitle: { fontFamily: fontFamilies.display, fontSize: 19 },
-  comingSoon: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 13,
-    lineHeight: 19,
   },
 });

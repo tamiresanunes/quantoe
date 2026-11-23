@@ -15,7 +15,9 @@ import { fontFamilies } from '@/theme/typography';
 void SplashScreen.preventAutoHideAsync();
 
 function AppStack() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
 
   return (
     <Stack
@@ -30,7 +32,7 @@ function AppStack() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Protected guard={!user} redirectTo="/stores">
+      <Stack.Protected guard={!user} redirectTo="/home">
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="auth/register" options={{ headerShown: false }} />
         <Stack.Screen
@@ -39,16 +41,29 @@ function AppStack() {
         />
       </Stack.Protected>
       <Stack.Protected guard={!!user} redirectTo="/auth/login">
+        <Stack.Screen name="home" options={{ headerShown: false }} />
+        <Stack.Screen name="reports" options={{ headerShown: false }} />
+        <Stack.Screen name="alerts" options={{ headerShown: false }} />
         <Stack.Screen name="stores/index" options={{ headerShown: false }} />
         <Stack.Screen name="stores/create" options={{ headerShown: false }} />
         <Stack.Screen name="inventory/index" options={{ headerShown: false }} />
         <Stack.Screen name="inventory/new" options={{ headerShown: false }} />
+        <Stack.Screen name="inventory/move" options={{ headerShown: false }} />
         <Stack.Screen
           name="inventory/detail"
           options={{ headerShown: false }}
         />
         <Stack.Screen name="inventory/price" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="inventory/suggestion"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="profile/settings"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="profile/help" options={{ headerShown: false }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile/preferences"

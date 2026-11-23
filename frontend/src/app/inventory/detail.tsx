@@ -11,41 +11,30 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import type { Brand } from '@/features/brands/brand-types';
+import {
+  conditionLabels,
+  isPieceCondition,
+  isPieceStyle,
+  styleLabels,
+} from '@/features/inventory/piece-attributes';
 import { useStores } from '@/features/stores/store-context';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
+import { layout } from '@/theme/spacing';
 import { fontFamilies } from '@/theme/typography';
-import type {
-  Category,
-  PieceCondition,
-  PieceStatus,
-  PieceStyle,
-  StorePiece,
-} from '@/types/models';
+import type { Category, PieceStatus, StorePiece } from '@/types/models';
 
-const conditionLabels: Record<PieceCondition, string> = {
-  new: 'Novo',
-  excellent: 'Ótimo',
-  good: 'Bom',
-  fair: 'Regular',
-  worn: 'Desgastado',
-};
-const styleLabels: Record<PieceStyle, string> = {
-  casual: 'Casual',
-  social: 'Social',
-  vintage: 'Vintage',
-  beach: 'Praia',
-  winter: 'Inverno',
-  other: 'Outro',
-};
 const statusLabels: Record<PieceStatus, string> = {
   available: 'Livre',
   reserved: 'Reservada',
@@ -66,8 +55,8 @@ function missingFields(
     missing.push('categoria');
   if (!piece.brandId || !brands.some((item) => item.id === piece.brandId))
     missing.push('marca');
-  if (!piece.condition) missing.push('estado de conservação');
-  if (!piece.style) missing.push('estilo');
+  if (!isPieceCondition(piece.condition)) missing.push('estado de conservação');
+  if (!isPieceStyle(piece.style)) missing.push('estilo');
   if (!piece.status) missing.push('status');
   if (
     piece.acquisitionPrice === undefined ||
@@ -90,20 +79,24 @@ function missingFields(
 }
 
 export default function PieceDetailScreen() {
-  const { pieceId, saved, priced } = useLocalSearchParams<{
+  const { pieceId, saved, priced, moved } = useLocalSearchParams<{
     pieceId?: string;
     saved?: string;
     priced?: string;
+    moved?: string;
   }>();
   const { user } = useAuth();
   const { activeStore, activePieces, loading } = useStores();
-  const { heroHeight, contentWidth } = useResponsiveLayout();
+  const { heroHeight, heroCardTop, contentWidth } = useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [optionsReady, setOptionsReady] = useState(false);
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [notice, setNotice] = useState(
-    saved === 'created' || saved === 'updated' || priced === '1',
+    saved === 'created' ||
+      saved === 'updated' ||
+      priced === '1' ||
+      moved === '1',
   );
   const piece = activePieces.find((item) => item.id === pieceId);
 
@@ -158,6 +151,7 @@ export default function PieceDetailScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView contentContainerStyle={s.content}>
         <View style={[s.hero, { height: heroHeight }]}>
           <View style={s.header}>
@@ -173,7 +167,7 @@ export default function PieceDetailScreen() {
                   android: 'arrow_back',
                   web: 'arrow_back',
                 }}
-                size={18}
+                size={layout.headerIcon}
                 tintColor={colors.action.secondary}
               />
             </Pressable>
@@ -200,7 +194,10 @@ export default function PieceDetailScreen() {
         </View>
 
         <View
-          style={[s.body, { width: contentWidth, marginTop: 86 - heroHeight }]}
+          style={[
+            s.body,
+            { width: contentWidth, marginTop: heroCardTop - heroHeight },
+          ]}
         >
           {loading || (piece && !optionsReady && !optionsError) ? (
             <LoadingState message="Carregando peça..." />
@@ -218,11 +215,13 @@ export default function PieceDetailScreen() {
                   compact
                   variant="success"
                   title={
-                    priced === '1'
-                      ? 'Preço salvo com sucesso.'
-                      : saved === 'updated'
-                        ? 'Peça atualizada com sucesso.'
-                        : 'Peça cadastrada com sucesso.'
+                    moved === '1'
+                      ? 'Movimentação registrada com sucesso.'
+                      : priced === '1'
+                        ? 'Preço salvo com sucesso.'
+                        : saved === 'updated'
+                          ? 'Peça atualizada com sucesso.'
+                          : 'Peça cadastrada com sucesso.'
                   }
                   onDismiss={() => setNotice(false)}
                 />
@@ -266,7 +265,7 @@ export default function PieceDetailScreen() {
                 </Text>
                 <Text style={s.meta}>
                   {piece.code ?? 'Sem código'} · Tam. {piece.size || '—'} ·{' '}
-                  {piece.condition
+                  {isPieceCondition(piece.condition)
                     ? conditionLabels[piece.condition]
                     : 'Conservação pendente'}
                 </Text>
@@ -314,7 +313,7 @@ export default function PieceDetailScreen() {
                 <View style={s.detailRow}>
                   <Text style={s.detailLabel}>Estilo</Text>
                   <Text style={s.detailValue}>
-                    {piece.style ? styleLabels[piece.style] : '—'}
+                    {isPieceStyle(piece.style) ? styleLabels[piece.style] : '—'}
                   </Text>
                 </View>
                 <View style={s.detailRow}>
@@ -343,11 +342,22 @@ export default function PieceDetailScreen() {
                   </Text>
                   <Text style={s.missingText}>{missing.join(' · ')}</Text>
                   <Text style={s.missingHint}>
-                    Toque no lápis para corrigir antes de precificar.
+                    Toque no lápis para completar o cadastro da peça.
                   </Text>
                 </View>
               ) : null}
               <View style={s.actions}>
+                <AppButton
+                  title="Movimentar"
+                  variant="secondary"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/inventory/move',
+                      params: { pieceId: piece.id },
+                    })
+                  }
+                  style={s.action}
+                />
                 <AppButton
                   title="Editar dados"
                   variant="secondary"
@@ -361,7 +371,7 @@ export default function PieceDetailScreen() {
                 />
                 <AppButton
                   title="Precificar"
-                  disabled={missing.length > 0 || !optionsReady}
+                  disabled={!optionsReady}
                   onPress={() =>
                     router.push({
                       pathname: '/inventory/price',
@@ -384,17 +394,16 @@ const s = StyleSheet.create({
   content: { alignItems: 'center', paddingBottom: 28, flexGrow: 1 },
   hero: {
     width: '100%',
-    paddingTop: 10,
+    paddingTop: layout.screenTop,
     paddingHorizontal: 16,
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
   header: { flexDirection: 'row', justifyContent: 'space-between' },
   roundButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -463,6 +472,7 @@ const s = StyleSheet.create({
   },
   metrics: { flexDirection: 'row', gap: 8 },
   metric: {
+    ...cardSurface,
     flex: 1,
     minWidth: 0,
     padding: 10,
@@ -487,6 +497,7 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   margin: {
+    ...cardSurface,
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 12,
@@ -499,6 +510,7 @@ const s = StyleSheet.create({
     color: colors.semantic.success.foreground,
   },
   details: {
+    ...cardSurface,
     borderRadius: 17,
     padding: 13,
     gap: 8,

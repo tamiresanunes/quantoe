@@ -2,6 +2,7 @@
 export const palette = {
   terracotta: '#A6533D',
   clay: '#D18A6A',
+  earth: '#F5E4DD',
   cream: '#F5EDE2',
   olive: '#6B7054',
   coffee: '#332A25',
@@ -18,6 +19,19 @@ const semanticColors = {
 /** Tema claro do QuantoÉ. */
 export const colors = {
   brand: palette,
+  overlay: 'rgba(51, 42, 37, 0.55)',
+  categoryAccent: {
+    green: '#5B7B5B',
+    ochre: '#D3973D',
+    sand: '#C5A58F',
+  },
+  illustration: {
+    cocoa: '#887165',
+    gold: '#DEB26D',
+    clay: '#C47E61',
+    sand: '#D5BBAA',
+    icon: '#6F5547',
+  },
   background: {
     primary: '#FAF6EF',
     secondary: palette.cream,

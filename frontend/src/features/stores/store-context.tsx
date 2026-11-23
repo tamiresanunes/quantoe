@@ -11,6 +11,8 @@ import { storeService } from '@/services';
 import type {
   CreatePieceInput,
   CreateStoreInput,
+  MovePieceInput,
+  PricingPieceInput,
 } from '@/services/contracts/store-service';
 import type { Store, StorePiece } from '@/types/models';
 
@@ -34,8 +36,11 @@ type StoreContextValue = {
   removeStore(storeId: string): Promise<void>;
   activateStore(storeId: string): Promise<void>;
   createPiece(input: CreatePieceInput): Promise<StorePiece>;
+  createQuickPiece(name: string, input: PricingPieceInput): Promise<StorePiece>;
+  pricePiece(pieceId: string, input: PricingPieceInput): Promise<StorePiece>;
   updatePiece(pieceId: string, input: CreatePieceInput): Promise<StorePiece>;
   setPiecePrice(pieceId: string, salePrice: number): Promise<StorePiece>;
+  movePiece(pieceId: string, input: MovePieceInput): Promise<StorePiece>;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -124,6 +129,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await load(id);
     return created;
   }
+  async function createQuickPiece(name: string, input: PricingPieceInput) {
+    const id = ownerId();
+    const storeId = stores.find((store) => store.isActive)?.id;
+    if (!storeId) throw new Error('Selecione uma loja antes de precificar.');
+    const created = await storeService.createQuickPiece(
+      id,
+      storeId,
+      name,
+      input,
+    );
+    await load(id);
+    return created;
+  }
+  async function pricePiece(pieceId: string, input: PricingPieceInput) {
+    const id = ownerId();
+    const storeId = stores.find((store) => store.isActive)?.id;
+    if (!storeId) throw new Error('Selecione uma loja antes de precificar.');
+    const updated = await storeService.pricePiece(id, storeId, pieceId, input);
+    await load(id);
+    return updated;
+  }
   async function updatePiece(pieceId: string, input: CreatePieceInput) {
     const id = ownerId();
     const storeId = stores.find((store) => store.isActive)?.id;
@@ -142,6 +168,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pieceId,
       salePrice,
     );
+    await load(id);
+    return updated;
+  }
+  async function movePiece(pieceId: string, input: MovePieceInput) {
+    const id = ownerId();
+    const storeId = stores.find((store) => store.isActive)?.id;
+    if (!storeId) throw new Error('Selecione uma loja antes de movimentar.');
+    const updated = await storeService.movePiece(id, storeId, pieceId, input);
     await load(id);
     return updated;
   }
@@ -164,8 +198,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         removeStore,
         activateStore,
         createPiece,
+        createQuickPiece,
+        pricePiece,
         updatePiece,
         setPiecePrice,
+        movePiece,
       }}
     >
       {children}

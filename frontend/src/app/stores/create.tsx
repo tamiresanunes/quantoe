@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppSelect } from '@/components/app-select';
@@ -21,15 +23,16 @@ import { AppTextField } from '@/components/app-text-field';
 import { useAuth } from '@/features/auth/auth-context';
 import { cityOptions, states } from '@/features/stores/brazil-locations';
 import { useStores } from '@/features/stores/store-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 export default function CreateStoreScreen() {
   const { from } = useLocalSearchParams<{ from?: string }>();
-  const { compact, heroHeight, contentWidth, cardPadding } =
+  const { heroHeight, heroCardTop, contentWidth, cardPadding } =
     useResponsiveLayout();
-  const cardTop = compact ? 90 : 104;
   const { user, signOut } = useAuth();
   const { createStore } = useStores();
   const [name, setName] = useState('');
@@ -70,7 +73,7 @@ export default function CreateStoreScreen() {
         city,
         logoUrl,
       });
-      router.replace({ pathname: '/stores', params: { storeCreated: '1' } });
+      router.replace('/home');
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -93,9 +96,10 @@ export default function CreateStoreScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.screen}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={styles.content}
@@ -118,7 +122,7 @@ export default function CreateStoreScreen() {
               {
                 width: contentWidth,
                 padding: cardPadding,
-                marginTop: cardTop - heroHeight,
+                marginTop: heroCardTop - heroHeight,
               },
             ]}
           >
@@ -258,14 +262,13 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 18,
-    paddingTop: 32,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 21,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 27,
     color: colors.text.primary,
   },
@@ -278,6 +281,7 @@ const styles = StyleSheet.create({
     color: colors.action.secondary,
   },
   card: {
+    ...cardSurface,
     width: '90%',
     maxWidth: 420,
     gap: 16,

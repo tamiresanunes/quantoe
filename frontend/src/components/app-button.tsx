@@ -62,12 +62,20 @@ export function AppButton({
             : styles.outlinePressed),
         inactive && styles.disabled,
         style,
+        { minHeight: componentSizes.button },
       ]}
     >
       {loading ? (
         <ActivityIndicator color={foreground} />
       ) : (
-        <Text style={[styles.label, { color: foreground }, labelStyle]}>
+        <Text
+          style={[
+            styles.label,
+            { color: foreground },
+            labelStyle,
+            styles.standardLabel,
+          ]}
+        >
           {title}
         </Text>
       )}
@@ -86,7 +94,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  small: { minHeight: componentSizes.touchTarget, paddingVertical: spacing.xs },
+  small: { minHeight: componentSizes.button, paddingVertical: spacing.xs },
   primary: { backgroundColor: colors.action.primary },
   primaryPressed: {
     backgroundColor: colors.action.primaryPressed,
@@ -101,4 +109,5 @@ const styles = StyleSheet.create({
   outlinePressed: { backgroundColor: colors.surface.selected },
   disabled: { opacity: 0.5 },
   label: { ...textStyles.button, textAlign: 'center' },
+  standardLabel: { fontSize: 12 },
 });

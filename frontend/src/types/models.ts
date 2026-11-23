@@ -37,11 +37,37 @@ export interface StorePiece {
   notes?: string;
   status?: PieceStatus;
   salePrice?: number;
+  movements?: StockMovement[];
 }
 
-export type PieceCondition = 'new' | 'excellent' | 'good' | 'fair' | 'worn';
+export type StockMovementReason =
+  'purchase' | 'return' | 'sale' | 'exchange' | 'damage' | 'adjustment';
+
+export interface StockMovement {
+  id: ID;
+  direction: 'in' | 'out';
+  quantity: number;
+  reason: StockMovementReason;
+  note: string;
+  createdAt: string;
+  balanceAfter: number;
+}
+
+export type PieceCondition =
+  'new_with_tag' | 'excellent' | 'very_good' | 'good' | 'fair';
 export type PieceStyle =
-  'casual' | 'social' | 'vintage' | 'beach' | 'winter' | 'other';
+  | 'vintage'
+  | 'old_money'
+  | 'y2k'
+  | 'retro'
+  | 'streetwear'
+  | 'cottagecore'
+  | 'boho'
+  | 'classic'
+  | 'minimalist'
+  | 'sporty'
+  | 'social'
+  | 'casual';
 export type PieceStatus = 'available' | 'reserved' | 'clearance' | 'sold';
 
 export interface Category {

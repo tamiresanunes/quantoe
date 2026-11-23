@@ -9,6 +9,7 @@ import {
   type TextStyle,
 } from 'react-native';
 
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { radii, spacing } from '@/theme/spacing';
 import { textStyles } from '@/theme/typography';
@@ -73,10 +74,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
-    backgroundColor: 'rgba(51, 42, 37, 0.55)',
+    backgroundColor: colors.overlay,
   },
   compactOverlay: { padding: spacing.sm },
   panel: {
+    ...cardSurface,
     width: '100%',
     maxWidth: 480,
     backgroundColor: colors.surface.primary,

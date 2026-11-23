@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { mockUsers } from '@/mocks/fixtures/users';
 import { isValidEmail } from '@/features/auth/validation';
 import type {
@@ -7,8 +9,9 @@ import type {
 } from '@/services/contracts/auth-service';
 import type { User } from '@/types/models';
 
-// Contas e senhas de demonstração existem apenas na memória da sessão.
+// As contas de demonstração usam credenciais locais; a sessão ativa é persistida.
 const demoPassword = 'Senha123!';
+const sessionKey = '@quantoe:auth-session';
 const accounts = mockUsers.map((user) => ({
   user: { ...user },
   password: demoPassword,
@@ -27,6 +30,7 @@ export const mockAuthService: AuthService = {
     if (!account || account.password !== password) {
       throw new Error('E-mail ou senha incorretos.');
     }
+    await AsyncStorage.setItem(sessionKey, JSON.stringify(account.user));
     currentUser = account.user;
     return account.user;
   },
@@ -47,6 +51,7 @@ export const mockAuthService: AuthService = {
       photoUrl: input.photoUrl ?? null,
     };
     accounts.push({ user, password: input.password });
+    await AsyncStorage.setItem(sessionKey, JSON.stringify(user));
     currentUser = user;
     return user;
   },
@@ -76,10 +81,12 @@ export const mockAuthService: AuthService = {
       account.password = input.newPassword;
     }
     account.user = { ...account.user, name, email };
+    await AsyncStorage.setItem(sessionKey, JSON.stringify(account.user));
     currentUser = account.user;
     return account.user;
   },
   async signOut() {
+    await AsyncStorage.removeItem(sessionKey);
     currentUser = null;
   },
   async requestPasswordReset() {
@@ -87,6 +94,22 @@ export const mockAuthService: AuthService = {
     // Demonstração: nenhuma mensagem é enviada e a existência da conta não é revelada.
   },
   async getCurrentUser() {
+    if (currentUser) return currentUser;
+    const stored = await AsyncStorage.getItem(sessionKey);
+    if (!stored) return null;
+    try {
+      const user = JSON.parse(stored) as User;
+      if (
+        typeof user.id !== 'string' ||
+        typeof user.name !== 'string' ||
+        typeof user.email !== 'string'
+      ) {
+        return null;
+      }
+      currentUser = user;
+    } catch {
+      return null;
+    }
     return currentUser;
   },
 };

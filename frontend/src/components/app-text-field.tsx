@@ -50,6 +50,7 @@ export function AppTextField({
           focused && styles.focused,
           !!error && styles.invalid,
           !editable && styles.disabled,
+          inputProps.multiline ? styles.multilineField : styles.standardField,
         ]}
       >
         {leftAccessory}
@@ -69,7 +70,13 @@ export function AppTextField({
           }}
           placeholderTextColor={colors.text.auxiliary}
           selectionColor={colors.brand.terracotta}
-          style={[styles.input, style]}
+          style={[
+            styles.input,
+            style,
+            inputProps.multiline
+              ? styles.standardMultilineInput
+              : styles.standardInput,
+          ]}
         />
         {rightAccessory}
       </View>
@@ -86,7 +93,12 @@ export function AppTextField({
 
 const styles = StyleSheet.create({
   container: { gap: layout.labelGap },
-  label: { ...textStyles.label, color: colors.text.primary },
+  label: {
+    ...textStyles.label,
+    fontSize: 11,
+    lineHeight: 14,
+    color: colors.text.primary,
+  },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -99,6 +111,14 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.sm,
     paddingRight: spacing.xs,
   },
+  standardField: { minHeight: 36, height: 36, borderRadius: 14 },
+  multilineField: {
+    minHeight: 88,
+    height: undefined,
+    borderRadius: 14,
+    alignItems: 'flex-start',
+    paddingTop: spacing.xs,
+  },
   input: {
     ...textStyles.body,
     flex: 1,
@@ -108,6 +128,22 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     outlineColor: 'transparent',
     outlineWidth: 0,
+  },
+  standardInput: {
+    minHeight: 32,
+    height: 32,
+    fontSize: 11,
+    lineHeight: 14,
+    paddingVertical: 4,
+  },
+  standardMultilineInput: {
+    minHeight: 74,
+    height: 74,
+    fontSize: 11,
+    lineHeight: 14,
+    paddingTop: 4,
+    paddingBottom: 4,
+    textAlignVertical: 'top',
   },
   focused: { borderColor: colors.border.selected, borderWidth: 2 },
   invalid: { borderColor: colors.semantic.error.foreground },

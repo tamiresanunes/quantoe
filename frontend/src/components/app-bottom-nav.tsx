@@ -4,9 +4,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
-type AppBottomNavProps = { active: 'home' | 'inventory' | 'profile' };
+type AppBottomNavProps = {
+  active: 'home' | 'inventory' | 'pricing' | 'reports' | 'profile' | 'stores';
+};
 
 export function AppBottomNav({ active }: AppBottomNavProps) {
   const { compact } = useResponsiveLayout();
@@ -19,8 +21,8 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityRole="tab"
         accessibilityLabel="Início"
         accessibilityState={{ selected: active === 'home' }}
-        onPress={() => router.replace('/stores')}
-        style={styles.item}
+        onPress={() => router.replace('/home')}
+        style={[styles.item, active === 'home' && styles.activeItem]}
       >
         <SymbolView
           name={{ ios: 'house', android: 'home', web: 'home' }}
@@ -38,7 +40,7 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
         accessibilityLabel="Estoque"
         accessibilityState={{ selected: active === 'inventory' }}
         onPress={() => router.replace('/inventory')}
-        style={styles.item}
+        style={[styles.item, active === 'inventory' && styles.activeItem]}
       >
         <SymbolView
           name={{
@@ -59,10 +61,12 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
           Estoque
         </Text>
       </Pressable>
-      <View
-        style={styles.item}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+      <Pressable
+        style={[styles.item, active === 'pricing' && styles.activeItem]}
+        accessibilityRole="tab"
+        accessibilityLabel="Precificar"
+        accessibilityState={{ selected: active === 'pricing' }}
+        onPress={() => router.replace('/inventory/price')}
       >
         <View style={styles.featuredIcon}>
           <SymbolView
@@ -71,26 +75,40 @@ export function AppBottomNav({ active }: AppBottomNavProps) {
             tintColor={colors.text.inverse}
           />
         </View>
-        <Text style={styles.label}>Precificar</Text>
-      </View>
-      <View
-        style={styles.item}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+        <Text
+          style={[styles.label, active === 'pricing' && styles.activeLabel]}
+        >
+          Precificar
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="tab"
+        accessibilityLabel="Relatórios"
+        accessibilityState={{ selected: active === 'reports' }}
+        onPress={() => router.replace('/reports')}
+        style={[styles.item, active === 'reports' && styles.activeItem]}
       >
         <SymbolView
           name={{ ios: 'chart.bar', android: 'bar_chart', web: 'bar_chart' }}
           size={19}
-          tintColor={colors.border.default}
+          tintColor={
+            active === 'reports'
+              ? colors.surface.selected
+              : colors.border.default
+          }
         />
-        <Text style={styles.label}>Relatórios</Text>
-      </View>
+        <Text
+          style={[styles.label, active === 'reports' && styles.activeLabel]}
+        >
+          Relatórios
+        </Text>
+      </Pressable>
       <Pressable
         accessibilityRole="tab"
         accessibilityLabel="Perfil"
         accessibilityState={{ selected: active === 'profile' }}
         onPress={() => router.replace('/profile')}
-        style={styles.item}
+        style={[styles.item, active === 'profile' && styles.activeItem]}
       >
         <View style={active === 'profile' && styles.profileIcon}>
           <SymbolView
@@ -129,11 +147,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    borderRadius: 16,
+  },
+  activeItem: {
+    minHeight: 50,
+    marginHorizontal: 3,
+    backgroundColor: '#48433E',
+    transform: [{ scale: 1.06 }],
   },
   label: {
     fontFamily: fontFamilies.sansRegular,
-    fontSize: 8,
-    lineHeight: 11,
+    fontSize: fontSizes.tabLabel,
+    lineHeight: 13,
     color: colors.border.default,
   },
   activeLabel: {
