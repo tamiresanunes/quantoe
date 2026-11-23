@@ -10,6 +10,9 @@ export const fontFamilies = {
 /** Tamanhos em sp; Text e TextInput mantêm o dimensionamento do sistema. */
 export const fontSizes = {
   display: 36,
+  screenTitle: 22,
+  sectionTitle: 18,
+  tabLabel: 10,
   h1: 30,
   h2: 26,
   h3: 22,

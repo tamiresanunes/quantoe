@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppFeedback } from '@/components/app-feedback';
 import { useAuth } from '@/features/auth/auth-context';
@@ -30,9 +31,11 @@ import {
 import { storeService } from '@/services';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type {
   Category,
   PieceCondition,
@@ -71,20 +74,37 @@ function normalize(value: string) {
 }
 
 export default function InventoryScreen() {
-  const {
-    created,
-    priced,
-    query: initialQuery,
-    filter: initialFilter,
-  } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     created?: string;
     priced?: string;
     query?: string;
     filter?: string;
   }>();
+  return (
+    <InventoryContent
+      key={`${params.created}:${params.priced}:${params.query}:${params.filter}`}
+      created={params.created}
+      priced={params.priced}
+      initialQuery={params.query}
+      initialFilter={params.filter}
+    />
+  );
+}
+
+function InventoryContent({
+  created,
+  priced,
+  initialQuery,
+  initialFilter,
+}: {
+  created?: string;
+  priced?: string;
+  initialQuery?: string;
+  initialFilter?: string;
+}) {
   const { user } = useAuth();
   const { activeStore, activePieces, loading, error } = useStores();
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, heroHeight } = useResponsiveLayout();
   const [notice, setNotice] = useState(created === '1' || priced === '1');
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -326,6 +346,7 @@ export default function InventoryScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView
         contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled"
@@ -713,11 +734,10 @@ const s = StyleSheet.create({
   content: { alignItems: 'center', paddingBottom: 100, flexGrow: 1 },
   hero: {
     width: '100%',
-    backgroundColor: colors.surface.selected,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: layout.screenTop,
     paddingBottom: 28,
   },
   heroInner: { maxWidth: 420, gap: 12 },
@@ -729,7 +749,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   count: {
@@ -814,6 +834,7 @@ const s = StyleSheet.create({
     color: colors.action.primary,
   },
   filterPanel: {
+    ...cardSurface,
     gap: 15,
     padding: 13,
     borderRadius: 17,
@@ -854,7 +875,7 @@ const s = StyleSheet.create({
     alignSelf: 'flex-start',
     padding: 3,
     borderRadius: 13,
-    backgroundColor: '#ECD7D1',
+    backgroundColor: colors.surface.selected,
   },
   viewButton: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 10 },
   viewButtonActive: { backgroundColor: colors.surface.primary },

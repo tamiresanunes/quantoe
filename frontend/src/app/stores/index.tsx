@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppFeedback } from '@/components/app-feedback';
@@ -20,9 +22,11 @@ import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { EditStoreModal } from '@/features/stores/edit-store-modal';
 import { useStores } from '@/features/stores/store-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { Store } from '@/types/models';
 
 type Notice = {
@@ -36,13 +40,11 @@ export default function StoresScreen() {
     storeCreated?: string;
     loggedIn?: string;
   }>();
-  const { compact, heroHeight, contentWidth } = useResponsiveLayout();
-  const listTop = compact ? 88 : 96;
+  const { heroHeight, heroCardTop, contentWidth } = useResponsiveLayout();
   const { user } = useAuth();
   const {
     stores,
     activeStore,
-    activePieces,
     loading,
     error: loadError,
     refresh,
@@ -119,13 +121,16 @@ export default function StoresScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { minHeight: heroHeight }]}>
           <View style={styles.header}>
             <Pressable
-              accessibilityLabel="Voltar para o perfil"
+              accessibilityLabel="Voltar"
               accessibilityRole="button"
-              onPress={() => router.replace('/profile')}
+              onPress={() =>
+                router.canGoBack() ? router.back() : router.replace('/home')
+              }
               style={styles.backButton}
             >
               <View pointerEvents="none">
@@ -135,7 +140,7 @@ export default function StoresScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={18}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </View>
@@ -175,7 +180,7 @@ export default function StoresScreen() {
         <View
           style={[
             styles.listArea,
-            { width: contentWidth, marginTop: listTop - heroHeight },
+            { width: contentWidth, marginTop: heroCardTop - heroHeight },
           ]}
         >
           {notice ? (
@@ -333,35 +338,6 @@ export default function StoresScreen() {
               Toque em uma loja para torná-la ativa.
             </Text>
           ) : null}
-          {!loading && !loadError && activeStore ? (
-            <View style={styles.activeSummary}>
-              <Text style={styles.summaryEyebrow}>
-                NO CONTEXTO DO APLICATIVO
-              </Text>
-              <Text style={styles.summaryTitle}>{activeStore.name}</Text>
-              <Text style={styles.summaryMeta}>
-                {activeStore.city} · {activeStore.state} ·{' '}
-                {activeStore.pieceCount}{' '}
-                {activeStore.pieceCount === 1
-                  ? 'peça cadastrada'
-                  : 'peças cadastradas'}
-              </Text>
-              <Text style={styles.summaryLabel}>
-                Amostra do estoque desta loja
-              </Text>
-              {activePieces.length > 0 ? (
-                activePieces.map((piece) => (
-                  <Text key={piece.id} style={styles.summaryPiece}>
-                    • {piece.name}
-                  </Text>
-                ))
-              ) : (
-                <Text style={styles.summaryEmpty}>
-                  Nenhuma peça cadastrada nesta loja.
-                </Text>
-              )}
-            </View>
-          ) : null}
         </View>
       </ScrollView>
       <AppBottomNav active="stores" />
@@ -395,8 +371,7 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 20,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
@@ -407,16 +382,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface.primary,
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 21,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 28,
     color: colors.text.primary,
   },
@@ -438,6 +413,7 @@ const styles = StyleSheet.create({
   listArea: { width: '90%', maxWidth: 420, gap: 10 },
   noticeSlot: { marginBottom: 8 },
   storeCard: {
+    ...cardSurface,
     minHeight: 68,
     paddingHorizontal: 11,
     paddingVertical: 10,
@@ -507,48 +483,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     color: colors.text.secondary,
-  },
-  activeSummary: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 17,
-    backgroundColor: colors.surface.primary,
-    gap: 5,
-  },
-  summaryEyebrow: {
-    fontFamily: fontFamilies.sansSemiBold,
-    fontSize: 9,
-    letterSpacing: 1.2,
-    color: colors.action.secondary,
-  },
-  summaryTitle: {
-    fontFamily: fontFamilies.display,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.text.primary,
-  },
-  summaryMeta: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 10,
-    lineHeight: 14,
-    color: colors.text.secondary,
-  },
-  summaryLabel: {
-    marginTop: 7,
-    fontFamily: fontFamilies.sansMedium,
-    fontSize: 10,
-    color: colors.text.primary,
-  },
-  summaryPiece: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 10,
-    lineHeight: 15,
-    color: colors.text.secondary,
-  },
-  summaryEmpty: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 10,
-    lineHeight: 15,
-    color: colors.text.auxiliary,
   },
 });

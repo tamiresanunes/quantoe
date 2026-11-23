@@ -37,6 +37,20 @@ export interface StorePiece {
   notes?: string;
   status?: PieceStatus;
   salePrice?: number;
+  movements?: StockMovement[];
+}
+
+export type StockMovementReason =
+  'purchase' | 'return' | 'sale' | 'exchange' | 'damage' | 'adjustment';
+
+export interface StockMovement {
+  id: ID;
+  direction: 'in' | 'out';
+  quantity: number;
+  reason: StockMovementReason;
+  note: string;
+  createdAt: string;
+  balanceAfter: number;
 }
 
 export type PieceCondition =

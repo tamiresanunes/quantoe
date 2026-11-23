@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -21,9 +23,11 @@ import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { brandTiers, type Brand } from '@/features/brands/brand-types';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 type Notice = { variant: 'success' | 'error'; title: string; message?: string };
 
@@ -41,7 +45,7 @@ function searchKey(value: string) {
 export default function BrandsScreen() {
   const { saved } = useLocalSearchParams<{ saved?: string }>();
   const { user } = useAuth();
-  const { compact, heroHeight, contentWidth } = useResponsiveLayout();
+  const { heroHeight, heroCardTop, contentWidth } = useResponsiveLayout();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -132,6 +136,7 @@ export default function BrandsScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -156,7 +161,7 @@ export default function BrandsScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={17}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </Pressable>
@@ -190,7 +195,7 @@ export default function BrandsScreen() {
               styles.listArea,
               {
                 width: contentWidth,
-                marginTop: (compact ? 92 : 98) - heroHeight,
+                marginTop: heroCardTop - heroHeight,
               },
             ]}
           >
@@ -361,16 +366,15 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 11,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -378,7 +382,7 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 20,
+    fontSize: fontSizes.screenTitle,
     lineHeight: 26,
     color: colors.text.primary,
   },
@@ -438,6 +442,7 @@ const styles = StyleSheet.create({
     color: colors.action.secondary,
   },
   brandCard: {
+    ...cardSurface,
     overflow: 'hidden',
     borderRadius: 17,
     backgroundColor: colors.surface.primary,

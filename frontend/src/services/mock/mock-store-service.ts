@@ -16,6 +16,7 @@ import {
 import type {
   CreatePieceInput,
   CreateStoreInput,
+  MovePieceInput,
   PricingPieceInput,
   StoreService,
 } from '@/services/contracts/store-service';
@@ -367,6 +368,81 @@ export const mockStoreService: StoreService = {
       );
     } catch {
       throw new Error('Não foi possível salvar o preço da peça.');
+    }
+    return { ...updated };
+  },
+  async movePiece(ownerId, storeId, pieceId, input: MovePieceInput) {
+    await requireOwner(ownerId);
+    requireStore(ownerId, storeId);
+    if (
+      !Number.isInteger(input.quantity) ||
+      input.quantity < 1 ||
+      input.quantity > 999_999
+    )
+      throw new Error('Informe uma quantidade válida.');
+    if (input.note.trim().length > 500)
+      throw new Error('Use até 500 caracteres na observação.');
+    const validReasons =
+      input.direction === 'in'
+        ? ['purchase', 'return', 'adjustment']
+        : ['sale', 'exchange', 'damage', 'adjustment'];
+    if (!validReasons.includes(input.reason))
+      throw new Error('Selecione um motivo válido.');
+
+    const saved = await readStoredPieces(ownerId, storeId);
+    const sampleIndex = mockStorePieces.findIndex(
+      (piece) => piece.storeId === storeId && piece.id === pieceId,
+    );
+    const target =
+      saved.find((piece) => piece.id === pieceId) ??
+      mockStorePieces[sampleIndex];
+    if (!target || target.storeId !== storeId)
+      throw new Error('Peça não encontrada nesta loja.');
+    const current = target.quantity ?? 0;
+    if (!Number.isInteger(current) || current < 0)
+      throw new Error('O saldo atual desta peça está inválido.');
+    const next =
+      current + (input.direction === 'in' ? input.quantity : -input.quantity);
+    if (next < 0) throw new Error('A saída não pode superar o saldo atual.');
+    if (next > 999_999)
+      throw new Error('O saldo não pode superar 999.999 unidades.');
+
+    const updated: StorePiece = {
+      ...target,
+      code: target.code ?? formatPieceCode(sampleIndex + 1),
+      quantity: next,
+      status:
+        input.direction === 'in' && target.status === 'sold'
+          ? 'available'
+          : input.direction === 'out' && input.reason === 'sale' && next === 0
+            ? 'sold'
+            : target.status,
+      movements: [
+        ...(target.movements ?? []),
+        {
+          id: `movement-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          direction: input.direction,
+          quantity: input.quantity,
+          reason: input.reason,
+          note: input.note.trim(),
+          createdAt: new Date().toISOString(),
+          balanceAfter: next,
+        },
+      ],
+    };
+    try {
+      await AsyncStorage.setItem(
+        pieceKey(ownerId, storeId),
+        JSON.stringify(
+          saved.some((piece) => piece.id === pieceId)
+            ? saved.map((piece) => (piece.id === pieceId ? updated : piece))
+            : [...saved, updated],
+        ),
+      );
+    } catch {
+      throw new Error(
+        'Não foi possível salvar a movimentação neste dispositivo.',
+      );
     }
     return { ...updated };
   },

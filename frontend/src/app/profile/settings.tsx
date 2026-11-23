@@ -5,12 +5,15 @@ import { useState, type ComponentProps } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
 import { AppFeedback } from '@/components/app-feedback';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useAuth } from '@/features/auth/auth-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 type SymbolName = ComponentProps<typeof SymbolView>['name'];
 type SettingItem = { label: string; icon: SymbolName; onPress: () => void };
@@ -51,7 +54,7 @@ function SettingRow({
 }
 
 export default function SettingsScreen() {
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, heroHeight } = useResponsiveLayout();
   const { signOut } = useAuth();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -105,7 +108,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
-      <View style={s.heroBackdrop} />
+      <FixedTopBand height={heroHeight} />
       <ScrollView contentContainerStyle={s.content}>
         <View style={[s.inner, { width: contentWidth }]}>
           <View style={s.header}>
@@ -123,7 +126,7 @@ export default function SettingsScreen() {
                   android: 'arrow_back',
                   web: 'arrow_back',
                 }}
-                size={18}
+                size={layout.headerIcon}
                 tintColor={colors.action.primary}
               />
             </Pressable>
@@ -187,41 +190,35 @@ export default function SettingsScreen() {
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
-  heroBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 280,
-    backgroundColor: colors.surface.selected,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-  },
   content: { flexGrow: 1, alignItems: 'center', paddingBottom: 32 },
-  inner: { maxWidth: 420, gap: 14, paddingTop: 11 },
+  inner: {
+    maxWidth: 420,
+    gap: layout.screenContentGap,
+    paddingTop: layout.screenTop,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
-    marginBottom: 14,
+    gap: layout.headerGap,
+    marginBottom: layout.headerToCard - layout.screenContentGap,
   },
   back: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   group: {
+    ...cardSurface,
     borderRadius: 18,
     backgroundColor: colors.surface.primary,
-    overflow: 'hidden',
     shadowColor: colors.text.primary,
     shadowOpacity: 0.09,
     shadowRadius: 8,
@@ -251,6 +248,7 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   signOutRow: {
+    ...cardSurface,
     minHeight: 49,
     paddingHorizontal: 12,
     flexDirection: 'row',

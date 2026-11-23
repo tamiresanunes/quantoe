@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import {
@@ -22,9 +23,11 @@ import {
   styleLabels,
 } from '@/features/inventory/piece-attributes';
 import { useStores } from '@/features/stores/store-context';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 
 type Params = {
   pieceId?: string;
@@ -35,6 +38,8 @@ type Params = {
   style?: string;
   acquisitionPrice?: string;
   suggestedPrice?: string;
+  score?: string;
+  percent?: string;
 };
 
 const currency = (value: number) =>
@@ -53,9 +58,11 @@ function parseMoney(value: string) {
 export default function SuggestedPriceScreen() {
   const params = useLocalSearchParams<Params>();
   const { activePieces, pricePiece } = useStores();
-  const { contentWidth } = useResponsiveLayout();
+  const { contentWidth, heroHeight } = useResponsiveLayout();
   const suggested = Number(params.suggestedPrice);
   const cost = Number(params.acquisitionPrice);
+  const score = Number(params.score);
+  const appliedPercent = Number(params.percent);
   const [finalPrice, setFinalPrice] = useState(
     Number.isFinite(suggested) && suggested > 0
       ? suggested.toFixed(2).replace('.', ',')
@@ -73,14 +80,17 @@ export default function SuggestedPriceScreen() {
     Number.isFinite(cost) &&
     cost > 0 &&
     Number.isFinite(suggested) &&
-    suggested > 0;
+    suggested > 0 &&
+    Number.isInteger(score) &&
+    score >= 0 &&
+    [40, 70, 100, 140, 180].includes(appliedPercent);
   const conditionLabel = isPieceCondition(params.condition)
     ? conditionLabels[params.condition]
     : '—';
   const styleLabel = isPieceStyle(params.style)
     ? styleLabels[params.style]
     : '—';
-  const suggestedPercent = valid ? Math.round((suggested / cost - 1) * 100) : 0;
+  const suggestedPercent = valid ? appliedPercent : 0;
   const finalPercent =
     valid && amount !== null ? Math.round((amount / cost - 1) * 100) : null;
 
@@ -138,6 +148,7 @@ export default function SuggestedPriceScreen() {
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -160,7 +171,7 @@ export default function SuggestedPriceScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={17}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </Pressable>
@@ -202,8 +213,16 @@ export default function SuggestedPriceScreen() {
                     <Text style={s.rowValue}>{currency(suggested)}</Text>
                   </View>
                   <View style={s.row}>
+                    <Text style={s.rowLabel}>Índice de valorização</Text>
+                    <Text style={s.rowValue}>{score} pontos</Text>
+                  </View>
+                  <View style={s.row}>
                     <Text style={s.rowLabel}>Valorização sugerida</Text>
                     <Text style={s.rowValue}>{suggestedPercent}%</Text>
+                  </View>
+                  <View style={s.row}>
+                    <Text style={s.rowLabel}>Lucro estimado</Text>
+                    <Text style={s.rowValue}>{currency(suggested - cost)}</Text>
                   </View>
                 </View>
 
@@ -274,28 +293,27 @@ export default function SuggestedPriceScreen() {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FBF5F3' },
+  screen: { flex: 1, backgroundColor: colors.background.primary },
   flex: { flex: 1 },
   content: { alignItems: 'center', paddingBottom: 30, flexGrow: 1 },
   hero: {
     width: '100%',
     height: 118,
-    backgroundColor: colors.surface.selected,
-    paddingTop: 14,
+    paddingTop: layout.screenTop,
     alignItems: 'center',
   },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: layout.headerGap },
   back: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 22,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   mode: {
@@ -304,8 +322,10 @@ const s = StyleSheet.create({
     letterSpacing: 1.3,
     color: colors.text.secondary,
   },
-  body: { maxWidth: 420, marginTop: -15, gap: 12 },
+  body: { maxWidth: 420, marginTop: -15, gap: layout.screenContentGap },
   priceCard: {
+    ...cardSurface,
+    borderColor: colors.border.strong,
     minHeight: 95,
     borderRadius: 17,
     backgroundColor: colors.text.primary,
@@ -320,7 +340,7 @@ const s = StyleSheet.create({
   eyebrow: {
     fontFamily: fontFamilies.sansSemiBold,
     fontSize: 9,
-    color: '#CBBDB7',
+    color: colors.border.default,
   },
   bigPrice: {
     fontFamily: fontFamilies.display,
@@ -331,9 +351,10 @@ const s = StyleSheet.create({
   description: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 10,
-    color: '#CBBDB7',
+    color: colors.border.default,
   },
   summaryCard: {
+    ...cardSurface,
     backgroundColor: colors.surface.primary,
     borderRadius: 17,
     padding: 14,
@@ -355,6 +376,7 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   finalCard: {
+    ...cardSurface,
     backgroundColor: colors.surface.primary,
     borderRadius: 17,
     padding: 14,
@@ -395,6 +417,7 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   percentCard: {
+    ...cardSurface,
     backgroundColor: colors.surface.primary,
     borderRadius: 17,
     padding: 14,

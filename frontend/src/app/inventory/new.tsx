@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FixedTopBand } from '@/components/fixed-top-band';
+
 import { AppButton } from '@/components/app-button';
 import { AppFeedback } from '@/components/app-feedback';
 import { AppTextField } from '@/components/app-text-field';
@@ -34,9 +36,11 @@ import { systemBrands } from '@/mocks/fixtures/brands';
 import { mockBrandService } from '@/services/mock/mock-brand-service';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
 import { storeService } from '@/services';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type {
   Category,
   PieceCondition,
@@ -95,7 +99,8 @@ export default function NewPieceScreen() {
   const editingPiece = editId
     ? activePieces.find((item) => item.id === editId)
     : undefined;
-  const { heroHeight, contentWidth, cardPadding } = useResponsiveLayout();
+  const { heroHeight, heroCardTop, contentWidth, cardPadding } =
+    useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [code, setCode] = useState('');
@@ -367,27 +372,36 @@ export default function NewPieceScreen() {
         contentContainerStyle={s.choices}
         keyboardShouldPersistTaps="handled"
       >
-        {items.map((item) => (
-          <Pressable
-            key={item.value}
-            accessibilityRole="button"
-            accessibilityState={{ selected: value === item.value }}
-            onPress={() => onChange(item.value)}
-            style={[s.chip, value === item.value && s.chipSelected]}
-          >
-            <Text
-              style={[s.chipLabel, value === item.value && s.chipLabelSelected]}
+        {[...items]
+          .sort(
+            (first, second) =>
+              Number(second.value === value) - Number(first.value === value),
+          )
+          .map((item) => (
+            <Pressable
+              key={item.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected: value === item.value }}
+              onPress={() => onChange(item.value)}
+              style={[s.chip, value === item.value && s.chipSelected]}
             >
-              {item.label}
-            </Text>
-          </Pressable>
-        ))}
+              <Text
+                style={[
+                  s.chipLabel,
+                  value === item.value && s.chipLabelSelected,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
       </ScrollView>
     );
   }
 
   return (
     <SafeAreaView style={s.screen}>
+      <FixedTopBand height={heroHeight} />
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -418,7 +432,7 @@ export default function NewPieceScreen() {
                     android: 'arrow_back',
                     web: 'arrow_back',
                   }}
-                  size={18}
+                  size={layout.headerIcon}
                   tintColor={colors.action.secondary}
                 />
               </Pressable>
@@ -461,7 +475,7 @@ export default function NewPieceScreen() {
                   {
                     width: contentWidth,
                     padding: cardPadding,
-                    marginTop: 94 - heroHeight,
+                    marginTop: heroCardTop - heroHeight,
                   },
                 ]}
               >
@@ -570,6 +584,35 @@ export default function NewPieceScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={s.choices}
                   >
+                    {[...categories]
+                      .sort(
+                        (first, second) =>
+                          Number(second.id === categoryId) -
+                          Number(first.id === categoryId),
+                      )
+                      .map((item) => (
+                        <Pressable
+                          key={item.id}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: categoryId === item.id,
+                          }}
+                          onPress={() => setCategoryId(item.id)}
+                          style={[
+                            s.chip,
+                            categoryId === item.id && s.chipSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              s.chipLabel,
+                              categoryId === item.id && s.chipLabelSelected,
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
+                        </Pressable>
+                      ))}
                     <Pressable
                       accessibilityRole="button"
                       onPress={() =>
@@ -582,29 +625,6 @@ export default function NewPieceScreen() {
                     >
                       <Text style={s.chipLabel}>+ Nova</Text>
                     </Pressable>
-                    {categories.map((item) => (
-                      <Pressable
-                        key={item.id}
-                        accessibilityRole="button"
-                        accessibilityState={{
-                          selected: categoryId === item.id,
-                        }}
-                        onPress={() => setCategoryId(item.id)}
-                        style={[
-                          s.chip,
-                          categoryId === item.id && s.chipSelected,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            s.chipLabel,
-                            categoryId === item.id && s.chipLabelSelected,
-                          ]}
-                        >
-                          {item.name}
-                        </Text>
-                      </Pressable>
-                    ))}
                   </ScrollView>
                   {submitted &&
                   !categories.some((item) => item.id === categoryId) ? (
@@ -618,6 +638,40 @@ export default function NewPieceScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={s.choices}
                   >
+                    {[...brands]
+                      .sort((first, second) => {
+                        const selectedOrder =
+                          Number(second.id === brandId) -
+                          Number(first.id === brandId);
+                        if (selectedOrder !== 0) return selectedOrder;
+                        return (
+                          Number(first.tier === 'other') -
+                          Number(second.tier === 'other')
+                        );
+                      })
+                      .map((brand) => (
+                        <Pressable
+                          key={brand.id}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: brandId === brand.id,
+                          }}
+                          onPress={() => setBrandId(brand.id)}
+                          style={[
+                            s.chip,
+                            brandId === brand.id && s.chipSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              s.chipLabel,
+                              brandId === brand.id && s.chipLabelSelected,
+                            ]}
+                          >
+                            {brand.name}
+                          </Text>
+                        </Pressable>
+                      ))}
                     <Pressable
                       accessibilityRole="button"
                       onPress={() =>
@@ -630,56 +684,6 @@ export default function NewPieceScreen() {
                     >
                       <Text style={s.chipLabel}>+ Nova</Text>
                     </Pressable>
-                    {brands
-                      .filter((brand) => brand.tier !== 'other')
-                      .map((brand) => (
-                        <Pressable
-                          key={brand.id}
-                          accessibilityRole="button"
-                          accessibilityState={{
-                            selected: brandId === brand.id,
-                          }}
-                          onPress={() => setBrandId(brand.id)}
-                          style={[
-                            s.chip,
-                            brandId === brand.id && s.chipSelected,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              s.chipLabel,
-                              brandId === brand.id && s.chipLabelSelected,
-                            ]}
-                          >
-                            {brand.name}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    {brands
-                      .filter((brand) => brand.tier === 'other')
-                      .map((brand) => (
-                        <Pressable
-                          key={brand.id}
-                          accessibilityRole="button"
-                          accessibilityState={{
-                            selected: brandId === brand.id,
-                          }}
-                          onPress={() => setBrandId(brand.id)}
-                          style={[
-                            s.chip,
-                            brandId === brand.id && s.chipSelected,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              s.chipLabel,
-                              brandId === brand.id && s.chipLabelSelected,
-                            ]}
-                          >
-                            {brand.name}
-                          </Text>
-                        </Pressable>
-                      ))}
                   </ScrollView>
                   {submitted && !brands.some((item) => item.id === brandId) ? (
                     <Text style={s.errorText}>Selecione uma marca.</Text>
@@ -838,23 +842,22 @@ const s = StyleSheet.create({
   hero: {
     width: '100%',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    backgroundColor: colors.surface.selected,
+    paddingTop: layout.screenTop,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   back: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface.primary,
   },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 22,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   storeName: {
@@ -863,6 +866,7 @@ const s = StyleSheet.create({
     color: colors.text.secondary,
   },
   card: {
+    ...cardSurface,
     maxWidth: 420,
     borderRadius: 19,
     gap: 16,

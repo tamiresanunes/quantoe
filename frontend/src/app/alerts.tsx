@@ -10,16 +10,22 @@ import { LoadingState } from '@/components/loading-state';
 import { useAuth } from '@/features/auth/auth-context';
 import { inventoryAlerts } from '@/features/inventory/inventory-alerts';
 import {
+  minimumStockForPiece,
+  stockAlertForPiece,
+} from '@/features/inventory/stock-alerts';
+import {
   defaultStockPreferences,
   type StockPreferences,
 } from '@/features/stores/stock-preferences';
 import { useStores } from '@/features/stores/store-context';
 import { storeService } from '@/services';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
-import type { Category } from '@/types/models';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
+import type { Category, StorePiece } from '@/types/models';
 
 export default function AlertsScreen() {
   const { user } = useAuth();
@@ -77,8 +83,17 @@ export default function AlertsScreen() {
     categories,
     preferences,
   );
+  const stockPieces = activePieces
+    .map((piece) => ({
+      piece,
+      kind: stockAlertForPiece(piece, categories, preferences),
+    }))
+    .filter(
+      (item): item is { piece: StorePiece; kind: 'exhausted' | 'low' } =>
+        item.kind !== null,
+    );
   const loading = storeLoading || (!!key && loadedKey !== key);
-  const total = idlePieces.length + lowCategories.length;
+  const total = stockPieces.length + idlePieces.length + lowCategories.length;
 
   return (
     <SafeAreaView style={s.screen}>
@@ -88,7 +103,7 @@ export default function AlertsScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Voltar"
-              onPress={() => router.back()}
+              onPress={() => router.replace('/home')}
               style={s.back}
             >
               <SymbolView
@@ -97,13 +112,13 @@ export default function AlertsScreen() {
                   android: 'arrow_back',
                   web: 'arrow_back',
                 }}
-                size={18}
+                size={layout.headerIcon}
                 tintColor={colors.text.primary}
               />
             </Pressable>
             <View style={s.heading}>
               <Text accessibilityRole="header" style={s.title}>
-                Alertas
+                Notificações
               </Text>
               <Text style={s.subtitle}>{activeStore?.name ?? 'Estoque'}</Text>
             </View>
@@ -135,15 +150,15 @@ export default function AlertsScreen() {
             />
           ) : !activeStore ? (
             <EmptyState
-              title="Nenhuma loja ativa"
-              message="Selecione uma loja para acompanhar os alertas."
+              title="Nenhuma notificação por agora"
+              message="Ative uma loja para acompanhar alertas de estoque e peças paradas."
               actionLabel="Ver minhas lojas"
               onAction={() => router.push('/stores')}
             />
           ) : total === 0 ? (
             <EmptyState
-              title="Nenhum alerta por agora"
-              message="As peças paradas e as categorias abaixo do mínimo aparecerão aqui."
+              title="Nenhuma notificação por agora"
+              message="Peças com alerta, peças paradas e categorias abaixo do mínimo aparecerão aqui."
               actionLabel="Ver estoque"
               onAction={() => router.push('/inventory')}
             />
@@ -157,7 +172,11 @@ export default function AlertsScreen() {
                     atenção
                   </Text>
                   <Text style={s.summaryMeta}>
-                    {idlePieces.length}{' '}
+                    {stockPieces.length}{' '}
+                    {stockPieces.length === 1
+                      ? 'peça com alerta'
+                      : 'peças com alerta'}{' '}
+                    · {idlePieces.length}{' '}
                     {idlePieces.length === 1 ? 'peça parada' : 'peças paradas'}{' '}
                     · {lowCategories.length}{' '}
                     {lowCategories.length === 1
@@ -165,6 +184,61 @@ export default function AlertsScreen() {
                       : 'categorias abaixo do mínimo'}
                   </Text>
                 </View>
+              </View>
+
+              <View style={s.section}>
+                <View style={s.cardTop}>
+                  <Text style={s.sectionTitle}>Peças com alerta</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Ver todas as peças com alerta"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/inventory',
+                        params: { filter: 'alerts' },
+                      })
+                    }
+                  >
+                    <Text style={s.cardLink}>Ver todas ›</Text>
+                  </Pressable>
+                </View>
+                {stockPieces.length ? (
+                  stockPieces.map(({ piece, kind }) => (
+                    <Pressable
+                      key={piece.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Ver ${piece.name}`}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/inventory/detail',
+                          params: { pieceId: piece.id },
+                        })
+                      }
+                      style={s.card}
+                    >
+                      <View style={s.cardTop}>
+                        <Text numberOfLines={1} style={s.cardTitle}>
+                          {piece.name}
+                        </Text>
+                        <Text
+                          style={
+                            kind === 'exhausted' ? s.overdueBadge : s.lowBadge
+                          }
+                        >
+                          {kind === 'exhausted' ? 'ESGOTADO' : 'ESTOQUE BAIXO'}
+                        </Text>
+                      </View>
+                      <Text style={s.cardMeta}>
+                        {piece.quantity ?? '—'} un · mínimo:{' '}
+                        {minimumStockForPiece(piece, categories, preferences)}{' '}
+                        un
+                      </Text>
+                      <Text style={s.cardLink}>Ver peça ›</Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <Text style={s.sectionEmpty}>Nenhuma peça com alerta.</Text>
+                )}
               </View>
 
               <View style={s.section}>
@@ -274,17 +348,21 @@ export default function AlertsScreen() {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background.primary },
   content: { alignItems: 'center', paddingBottom: 32, flexGrow: 1 },
-  inner: { maxWidth: 420, gap: 18, paddingTop: 13 },
+  inner: {
+    maxWidth: 420,
+    gap: layout.screenContentGap,
+    paddingTop: layout.screenTop,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
-    marginBottom: 5,
+    gap: layout.headerGap,
+    marginBottom: layout.headerToCard - layout.screenContentGap,
   },
   back: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -292,7 +370,7 @@ const s = StyleSheet.create({
   heading: { flex: 1 },
   title: {
     fontFamily: fontFamilies.display,
-    fontSize: 23,
+    fontSize: fontSizes.screenTitle,
     color: colors.text.primary,
   },
   subtitle: {
@@ -309,6 +387,8 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   summary: {
+    ...cardSurface,
+    borderColor: colors.border.strong,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
@@ -336,7 +416,7 @@ const s = StyleSheet.create({
   section: { gap: 9 },
   sectionTitle: {
     fontFamily: fontFamilies.display,
-    fontSize: 20,
+    fontSize: fontSizes.sectionTitle,
     color: colors.text.primary,
   },
   sectionSubtitle: {
@@ -346,6 +426,7 @@ const s = StyleSheet.create({
     marginTop: -5,
   },
   card: {
+    ...cardSurface,
     gap: 9,
     padding: 14,
     borderRadius: 17,
@@ -386,6 +467,7 @@ const s = StyleSheet.create({
     paddingVertical: 4,
   },
   suggestion: {
+    ...cardSurface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,

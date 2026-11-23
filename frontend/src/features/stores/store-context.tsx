@@ -11,6 +11,7 @@ import { storeService } from '@/services';
 import type {
   CreatePieceInput,
   CreateStoreInput,
+  MovePieceInput,
   PricingPieceInput,
 } from '@/services/contracts/store-service';
 import type { Store, StorePiece } from '@/types/models';
@@ -39,6 +40,7 @@ type StoreContextValue = {
   pricePiece(pieceId: string, input: PricingPieceInput): Promise<StorePiece>;
   updatePiece(pieceId: string, input: CreatePieceInput): Promise<StorePiece>;
   setPiecePrice(pieceId: string, salePrice: number): Promise<StorePiece>;
+  movePiece(pieceId: string, input: MovePieceInput): Promise<StorePiece>;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -169,6 +171,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await load(id);
     return updated;
   }
+  async function movePiece(pieceId: string, input: MovePieceInput) {
+    const id = ownerId();
+    const storeId = stores.find((store) => store.isActive)?.id;
+    if (!storeId) throw new Error('Selecione uma loja antes de movimentar.');
+    const updated = await storeService.movePiece(id, storeId, pieceId, input);
+    await load(id);
+    return updated;
+  }
 
   const current = snapshot?.ownerId === user?.id ? snapshot : null;
   const stores = current?.stores ?? [];
@@ -192,6 +202,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         pricePiece,
         updatePiece,
         setPiecePrice,
+        movePiece,
       }}
     >
       {children}

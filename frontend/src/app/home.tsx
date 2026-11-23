@@ -23,6 +23,7 @@ import {
   stockAlertForPiece,
 } from '@/features/inventory/stock-alerts';
 import { inventoryAlerts } from '@/features/inventory/inventory-alerts';
+import { calculateInventoryIndicators } from '@/features/inventory/inventory-indicators';
 import {
   defaultStockPreferences,
   type StockPreferences,
@@ -30,9 +31,11 @@ import {
 import { useStores } from '@/features/stores/store-context';
 import { storeService } from '@/services';
 import { mockCategoryService } from '@/services/mock/mock-category-service';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { useResponsiveLayout } from '@/theme/responsive';
-import { fontFamilies } from '@/theme/typography';
+import { layout } from '@/theme/spacing';
+import { fontFamilies, fontSizes } from '@/theme/typography';
 import type { Category, StorePiece } from '@/types/models';
 
 const currency = (value: number) =>
@@ -90,10 +93,11 @@ export default function HomeScreen() {
   }, [ownerId, storeId]);
 
   const firstName = user?.name.trim().split(/\s+/)[0] || 'você';
-  const inventoryValue = activePieces.reduce((total, piece) => {
-    if (piece.status === 'sold' || piece.salePrice === undefined) return total;
-    return total + piece.salePrice * (piece.quantity ?? 1);
-  }, 0);
+  const inventoryIndicators = calculateInventoryIndicators(
+    activePieces,
+    categories,
+  );
+  const inventoryValue = inventoryIndicators.potentialSale;
   const alerts = activePieces
     .map((piece) => ({
       piece,
@@ -110,7 +114,9 @@ export default function HomeScreen() {
   const lowCount = alerts.filter((item) => item.kind === 'low').length;
   const alertSummary = inventoryAlerts(activePieces, categories, preferences);
   const alertCount =
-    alertSummary.idlePieces.length + alertSummary.lowCategories.length;
+    alerts.length +
+    alertSummary.idlePieces.length +
+    alertSummary.lowCategories.length;
   const isLoading =
     loading || (!!activeStore && loadedStoreId !== activeStore.id);
 
@@ -153,8 +159,8 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Ver peças com alerta"
-              onPress={() => router.push('/alerts')}
+              accessibilityLabel="Abrir notificações"
+              onPress={() => router.navigate('/alerts')}
               style={s.bell}
             >
               <SymbolView
@@ -163,7 +169,7 @@ export default function HomeScreen() {
                   android: 'notifications',
                   web: 'notifications',
                 }}
-                size={17}
+                size={layout.headerIcon}
                 tintColor={colors.text.primary}
               />
               {alertCount ? <View style={s.notificationDot} /> : null}
@@ -226,9 +232,9 @@ export default function HomeScreen() {
                 <Text style={s.valueLabel}>VALOR EM ESTOQUE</Text>
                 <Text style={s.value}>{currency(inventoryValue)}</Text>
                 <Text style={s.valueMeta}>
-                  {activePieces.length}{' '}
-                  {activePieces.length === 1 ? 'peça' : 'peças'}　 Vendas na
-                  semana: —
+                  {inventoryIndicators.totalPieces}{' '}
+                  {inventoryIndicators.totalPieces === 1 ? 'peça' : 'peças'}　
+                  Vendas na semana: —
                 </Text>
               </Pressable>
 
@@ -246,7 +252,7 @@ export default function HomeScreen() {
                       web: 'warning',
                     }}
                     size={18}
-                    tintColor="#D08C32"
+                    tintColor={colors.semantic.warning.foreground}
                   />
                   <Text style={s.statNumber}>{lowCount}</Text>
                   <Text style={s.statLabel}>Estoque baixo</Text>
@@ -264,7 +270,7 @@ export default function HomeScreen() {
                       web: 'inventory_2',
                     }}
                     size={18}
-                    tintColor="#B74742"
+                    tintColor={colors.semantic.error.foreground}
                   />
                   <Text style={s.statNumber}>{exhaustedCount}</Text>
                   <Text style={s.statLabel}>Esgotadas</Text>
@@ -290,7 +296,7 @@ export default function HomeScreen() {
                     android: 'swap_horiz',
                     web: 'swap_horiz',
                   }}
-                  disabled
+                  onPress={() => router.push('/inventory/move')}
                 />
                 <QuickAction
                   label="Relatórios"
@@ -299,7 +305,7 @@ export default function HomeScreen() {
                     android: 'north_east',
                     web: 'north_east',
                   }}
-                  disabled
+                  onPress={() => router.push('/reports')}
                 />
               </View>
 
@@ -307,7 +313,8 @@ export default function HomeScreen() {
                 <Text style={s.sectionTitle}>Peças com alerta</Text>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => router.push('/alerts')}
+                  accessibilityLabel="Ver todas as peças com alerta"
+                  onPress={() => openInventory('alerts')}
                 >
                   <Text style={s.seeAll}>Ver todas</Text>
                 </Pressable>
@@ -330,9 +337,11 @@ export default function HomeScreen() {
                       style={[
                         s.alertPhoto,
                         {
-                          backgroundColor: ['#DDB56F', '#DDD1C6', '#BF7B5E'][
-                            index % 3
-                          ],
+                          backgroundColor: [
+                            colors.brand.clay,
+                            colors.border.default,
+                            colors.brand.terracotta,
+                          ][index % 3],
                         },
                       ]}
                     >
@@ -412,9 +421,13 @@ function QuickAction({
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FBF5F3' },
+  screen: { flex: 1, backgroundColor: colors.background.primary },
   content: { alignItems: 'center', paddingBottom: 30, flexGrow: 1 },
-  body: { maxWidth: 420, gap: 14, paddingTop: 13 },
+  body: {
+    maxWidth: 420,
+    gap: layout.screenContentGap,
+    paddingTop: layout.screenTop,
+  },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -432,9 +445,9 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   bell: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: layout.headerButton,
+    height: layout.headerButton,
+    borderRadius: layout.headerButton / 2,
     backgroundColor: colors.surface.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -474,6 +487,8 @@ const s = StyleSheet.create({
     color: colors.text.primary,
   },
   valueCard: {
+    ...cardSurface,
+    borderColor: colors.border.strong,
     minHeight: 90,
     borderRadius: 17,
     backgroundColor: colors.text.primary,
@@ -488,7 +503,7 @@ const s = StyleSheet.create({
   valueLabel: {
     fontFamily: fontFamilies.sansSemiBold,
     fontSize: 9,
-    color: '#CCBEB7',
+    color: colors.border.default,
   },
   value: {
     fontFamily: fontFamilies.display,
@@ -498,10 +513,11 @@ const s = StyleSheet.create({
   valueMeta: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 10,
-    color: '#CCBEB7',
+    color: colors.border.default,
   },
   stats: { flexDirection: 'row', gap: 10 },
   statCard: {
+    ...cardSurface,
     flex: 1,
     minHeight: 88,
     borderRadius: 17,
@@ -526,7 +542,7 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fontFamilies.display,
-    fontSize: 17,
+    fontSize: fontSizes.sectionTitle,
     color: colors.text.primary,
     marginTop: 8,
   },
@@ -558,6 +574,7 @@ const s = StyleSheet.create({
     color: colors.action.primary,
   },
   alertCard: {
+    ...cardSurface,
     minHeight: 54,
     borderRadius: 16,
     padding: 8,

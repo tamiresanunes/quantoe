@@ -8,11 +8,17 @@ import {
   isPieceStyle,
   styleLabels,
 } from '@/features/inventory/piece-attributes';
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 import type { StorePiece } from '@/types/models';
 
-const illustrationColors = ['#887165', '#DEB26D', '#C47E61', '#D5BBAA'];
+const illustrationColors = [
+  colors.illustration.cocoa,
+  colors.illustration.gold,
+  colors.illustration.clay,
+  colors.illustration.sand,
+];
 
 export function InventoryPieceCard({
   piece,
@@ -68,7 +74,7 @@ export function InventoryPieceCard({
               web: 'checkroom',
             }}
             size={43}
-            tintColor="#6F5547"
+            tintColor={colors.illustration.icon}
           />
         )}
       </View>
@@ -104,6 +110,7 @@ export function InventoryPieceCard({
 
 const s = StyleSheet.create({
   card: {
+    ...cardSurface,
     padding: 8,
     borderRadius: 18,
     backgroundColor: colors.surface.primary,

@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 
+import { cardSurface } from '@/theme/card';
 import { colors } from '@/theme/colors';
 import { fontFamilies } from '@/theme/typography';
 
@@ -93,6 +94,7 @@ const s = StyleSheet.create({
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   skeletonCard: {
+    ...cardSurface,
     padding: 8,
     borderRadius: 18,
     gap: 8,
