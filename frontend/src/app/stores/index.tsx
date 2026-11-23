@@ -45,7 +45,6 @@ export default function StoresScreen() {
   const {
     stores,
     activeStore,
-    activePieces,
     loading,
     error: loadError,
     refresh,
@@ -339,35 +338,6 @@ export default function StoresScreen() {
               Toque em uma loja para torná-la ativa.
             </Text>
           ) : null}
-          {!loading && !loadError && activeStore ? (
-            <View style={styles.activeSummary}>
-              <Text style={styles.summaryEyebrow}>
-                NO CONTEXTO DO APLICATIVO
-              </Text>
-              <Text style={styles.summaryTitle}>{activeStore.name}</Text>
-              <Text style={styles.summaryMeta}>
-                {activeStore.city} · {activeStore.state} ·{' '}
-                {activeStore.pieceCount}{' '}
-                {activeStore.pieceCount === 1
-                  ? 'peça cadastrada'
-                  : 'peças cadastradas'}
-              </Text>
-              <Text style={styles.summaryLabel}>
-                Amostra do estoque desta loja
-              </Text>
-              {activePieces.length > 0 ? (
-                activePieces.map((piece) => (
-                  <Text key={piece.id} style={styles.summaryPiece}>
-                    • {piece.name}
-                  </Text>
-                ))
-              ) : (
-                <Text style={styles.summaryEmpty}>
-                  Nenhuma peça cadastrada nesta loja.
-                </Text>
-              )}
-            </View>
-          ) : null}
         </View>
       </ScrollView>
       <AppBottomNav active="stores" />
@@ -513,49 +483,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     color: colors.text.secondary,
-  },
-  activeSummary: {
-    ...cardSurface,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 17,
-    backgroundColor: colors.surface.primary,
-    gap: 5,
-  },
-  summaryEyebrow: {
-    fontFamily: fontFamilies.sansSemiBold,
-    fontSize: 9,
-    letterSpacing: 1.2,
-    color: colors.action.secondary,
-  },
-  summaryTitle: {
-    fontFamily: fontFamilies.display,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.text.primary,
-  },
-  summaryMeta: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 10,
-    lineHeight: 14,
-    color: colors.text.secondary,
-  },
-  summaryLabel: {
-    marginTop: 7,
-    fontFamily: fontFamilies.sansMedium,
-    fontSize: 10,
-    color: colors.text.primary,
-  },
-  summaryPiece: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 10,
-    lineHeight: 15,
-    color: colors.text.secondary,
-  },
-  summaryEmpty: {
-    fontFamily: fontFamilies.sansRegular,
-    fontSize: 10,
-    lineHeight: 15,
-    color: colors.text.auxiliary,
   },
 });

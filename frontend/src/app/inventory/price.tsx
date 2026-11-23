@@ -197,26 +197,32 @@ export default function PricePieceScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={s.chips}>
-          {items.map((item) => (
-            <Pressable
-              key={item.value}
-              accessibilityRole="button"
-              accessibilityState={{ selected: selected === item.value }}
-              onPress={() => {
-                onSelect(item.value);
-              }}
-              style={[s.chip, selected === item.value && s.chipSelected]}
-            >
-              <Text
-                style={[
-                  s.chipText,
-                  selected === item.value && s.chipTextSelected,
-                ]}
+          {[...items]
+            .sort(
+              (first, second) =>
+                Number(second.value === selected) -
+                Number(first.value === selected),
+            )
+            .map((item) => (
+              <Pressable
+                key={item.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selected === item.value }}
+                onPress={() => {
+                  onSelect(item.value);
+                }}
+                style={[s.chip, selected === item.value && s.chipSelected]}
               >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  style={[
+                    s.chipText,
+                    selected === item.value && s.chipTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            ))}
         </View>
       </ScrollView>
     );

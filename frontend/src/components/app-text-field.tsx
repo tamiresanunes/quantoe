@@ -50,7 +50,7 @@ export function AppTextField({
           focused && styles.focused,
           !!error && styles.invalid,
           !editable && styles.disabled,
-          styles.standardField,
+          inputProps.multiline ? styles.multilineField : styles.standardField,
         ]}
       >
         {leftAccessory}
@@ -112,6 +112,13 @@ const styles = StyleSheet.create({
     paddingRight: spacing.xs,
   },
   standardField: { minHeight: 36, height: 36, borderRadius: 14 },
+  multilineField: {
+    minHeight: 88,
+    height: undefined,
+    borderRadius: 14,
+    alignItems: 'flex-start',
+    paddingTop: spacing.xs,
+  },
   input: {
     ...textStyles.body,
     flex: 1,
@@ -130,10 +137,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   standardMultilineInput: {
-    minHeight: 32,
+    minHeight: 74,
+    height: 74,
     fontSize: 11,
     lineHeight: 14,
-    paddingVertical: 4,
+    paddingTop: 4,
+    paddingBottom: 4,
+    textAlignVertical: 'top',
   },
   focused: { borderColor: colors.border.selected, borderWidth: 2 },
   invalid: { borderColor: colors.semantic.error.foreground },

@@ -372,21 +372,29 @@ export default function NewPieceScreen() {
         contentContainerStyle={s.choices}
         keyboardShouldPersistTaps="handled"
       >
-        {items.map((item) => (
-          <Pressable
-            key={item.value}
-            accessibilityRole="button"
-            accessibilityState={{ selected: value === item.value }}
-            onPress={() => onChange(item.value)}
-            style={[s.chip, value === item.value && s.chipSelected]}
-          >
-            <Text
-              style={[s.chipLabel, value === item.value && s.chipLabelSelected]}
+        {[...items]
+          .sort(
+            (first, second) =>
+              Number(second.value === value) - Number(first.value === value),
+          )
+          .map((item) => (
+            <Pressable
+              key={item.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected: value === item.value }}
+              onPress={() => onChange(item.value)}
+              style={[s.chip, value === item.value && s.chipSelected]}
             >
-              {item.label}
-            </Text>
-          </Pressable>
-        ))}
+              <Text
+                style={[
+                  s.chipLabel,
+                  value === item.value && s.chipLabelSelected,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
       </ScrollView>
     );
   }
@@ -576,6 +584,35 @@ export default function NewPieceScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={s.choices}
                   >
+                    {[...categories]
+                      .sort(
+                        (first, second) =>
+                          Number(second.id === categoryId) -
+                          Number(first.id === categoryId),
+                      )
+                      .map((item) => (
+                        <Pressable
+                          key={item.id}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: categoryId === item.id,
+                          }}
+                          onPress={() => setCategoryId(item.id)}
+                          style={[
+                            s.chip,
+                            categoryId === item.id && s.chipSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              s.chipLabel,
+                              categoryId === item.id && s.chipLabelSelected,
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
+                        </Pressable>
+                      ))}
                     <Pressable
                       accessibilityRole="button"
                       onPress={() =>
@@ -588,29 +625,6 @@ export default function NewPieceScreen() {
                     >
                       <Text style={s.chipLabel}>+ Nova</Text>
                     </Pressable>
-                    {categories.map((item) => (
-                      <Pressable
-                        key={item.id}
-                        accessibilityRole="button"
-                        accessibilityState={{
-                          selected: categoryId === item.id,
-                        }}
-                        onPress={() => setCategoryId(item.id)}
-                        style={[
-                          s.chip,
-                          categoryId === item.id && s.chipSelected,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            s.chipLabel,
-                            categoryId === item.id && s.chipLabelSelected,
-                          ]}
-                        >
-                          {item.name}
-                        </Text>
-                      </Pressable>
-                    ))}
                   </ScrollView>
                   {submitted &&
                   !categories.some((item) => item.id === categoryId) ? (
@@ -624,6 +638,40 @@ export default function NewPieceScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={s.choices}
                   >
+                    {[...brands]
+                      .sort((first, second) => {
+                        const selectedOrder =
+                          Number(second.id === brandId) -
+                          Number(first.id === brandId);
+                        if (selectedOrder !== 0) return selectedOrder;
+                        return (
+                          Number(first.tier === 'other') -
+                          Number(second.tier === 'other')
+                        );
+                      })
+                      .map((brand) => (
+                        <Pressable
+                          key={brand.id}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: brandId === brand.id,
+                          }}
+                          onPress={() => setBrandId(brand.id)}
+                          style={[
+                            s.chip,
+                            brandId === brand.id && s.chipSelected,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              s.chipLabel,
+                              brandId === brand.id && s.chipLabelSelected,
+                            ]}
+                          >
+                            {brand.name}
+                          </Text>
+                        </Pressable>
+                      ))}
                     <Pressable
                       accessibilityRole="button"
                       onPress={() =>
@@ -636,56 +684,6 @@ export default function NewPieceScreen() {
                     >
                       <Text style={s.chipLabel}>+ Nova</Text>
                     </Pressable>
-                    {brands
-                      .filter((brand) => brand.tier !== 'other')
-                      .map((brand) => (
-                        <Pressable
-                          key={brand.id}
-                          accessibilityRole="button"
-                          accessibilityState={{
-                            selected: brandId === brand.id,
-                          }}
-                          onPress={() => setBrandId(brand.id)}
-                          style={[
-                            s.chip,
-                            brandId === brand.id && s.chipSelected,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              s.chipLabel,
-                              brandId === brand.id && s.chipLabelSelected,
-                            ]}
-                          >
-                            {brand.name}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    {brands
-                      .filter((brand) => brand.tier === 'other')
-                      .map((brand) => (
-                        <Pressable
-                          key={brand.id}
-                          accessibilityRole="button"
-                          accessibilityState={{
-                            selected: brandId === brand.id,
-                          }}
-                          onPress={() => setBrandId(brand.id)}
-                          style={[
-                            s.chip,
-                            brandId === brand.id && s.chipSelected,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              s.chipLabel,
-                              brandId === brand.id && s.chipLabelSelected,
-                            ]}
-                          >
-                            {brand.name}
-                          </Text>
-                        </Pressable>
-                      ))}
                   </ScrollView>
                   {submitted && !brands.some((item) => item.id === brandId) ? (
                     <Text style={s.errorText}>Selecione uma marca.</Text>
